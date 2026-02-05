@@ -1,19 +1,35 @@
-const pool = require('../config/database');
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+require('dotenv').config();
+
+// Direct connection (not parsing URL to avoid issues)
+const pool = new Pool({
+  host: 'yamabiko.proxy.rlwy.net',
+  port: 10164,
+  database: 'railway',
+  user: 'postgres',
+  password: 'tQjyFqHmiishmuaUKQlgFcwGorGCCLXg',
+  ssl: { rejectUnauthorized: false }
+});
 
 const initDatabase = async () => {
-  const client = await pool.connect();
+  console.log('Connecting to database...');
   
   try {
+    // Test connection
+    await pool.query('SELECT NOW()');
+    console.log('✓ Database connected successfully\n');
+    
     console.log('Starting database initialization...');
 
-    // Drop existing tables (for clean setup)
-    await client.query('DROP TABLE IF EXISTS proposals CASCADE');
-    await client.query('DROP TABLE IF EXISTS projects CASCADE');
-    await client.query('DROP TABLE IF EXISTS users CASCADE');
+    // Drop existing tables
+    await pool.query('DROP TABLE IF EXISTS proposals CASCADE');
+    await pool.query('DROP TABLE IF EXISTS projects CASCADE');
+    await pool.query('DROP TABLE IF EXISTS users CASCADE');
     console.log('✓ Dropped existing tables');
 
     // Create Users table
-    await client.query(`
+    await pool.query(`
       CREATE TABLE users (
         user_id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -27,7 +43,7 @@ const initDatabase = async () => {
     console.log('✓ Created users table');
 
     // Create Projects table
-    await client.query(`
+    await pool.query(`
       CREATE TABLE projects (
         project_id SERIAL PRIMARY KEY,
         homeowner_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -43,7 +59,7 @@ const initDatabase = async () => {
     console.log('✓ Created projects table');
 
     // Create Proposals table
-    await client.query(`
+    await pool.query(`
       CREATE TABLE proposals (
         proposal_id SERIAL PRIMARY KEY,
         project_id INTEGER NOT NULL REFERENCES projects(project_id) ON DELETE CASCADE,
@@ -57,39 +73,34 @@ const initDatabase = async () => {
     `);
     console.log('✓ Created proposals table');
 
-    // Create indexes for better query performance
-    await client.query('CREATE INDEX idx_projects_homeowner ON projects(homeowner_id)');
-    await client.query('CREATE INDEX idx_projects_status ON projects(status)');
-    await client.query('CREATE INDEX idx_proposals_project ON proposals(project_id)');
-    await client.query('CREATE INDEX idx_proposals_contractor ON proposals(contractor_id)');
+    // Create indexes
+    await pool.query('CREATE INDEX idx_projects_homeowner ON projects(homeowner_id)');
+    await pool.query('CREATE INDEX idx_projects_status ON projects(status)');
+    await pool.query('CREATE INDEX idx_proposals_project ON proposals(project_id)');
+    await pool.query('CREATE INDEX idx_proposals_contractor ON proposals(contractor_id)');
     console.log('✓ Created indexes');
 
-    // Insert sample admin user (password: admin123)
-    const bcrypt = require('bcrypt');
+    // Insert admin user
     const adminPassword = await bcrypt.hash('admin123', 10);
-    
-    await client.query(`
+    await pool.query(`
       INSERT INTO users (name, email, password_hash, role, is_verified)
       VALUES ('Admin User', 'admin@buildora.com', $1, 'Admin', TRUE)
     `, [adminPassword]);
     console.log('✓ Created admin user (admin@buildora.com / admin123)');
 
-    console.log('\n✓ Database initialization completed successfully!');
-    console.log('\nYou can now start the server with: npm run dev');
+    console.log('\n✅ Database initialization completed successfully!\n');
     
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('❌ Error:', error.message);
     throw error;
   } finally {
-    client.release();
     await pool.end();
   }
 };
 
-// Run initialization
 initDatabase()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error('Failed to initialize database:', error);
+    console.error('Failed:', error.message);
     process.exit(1);
   });
