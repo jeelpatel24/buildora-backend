@@ -34,7 +34,7 @@ Create a new user account.
 ```json
 {
   "message": "User registered successfully",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJKb2huIERvZSIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsInJvbGUiOiJIb21lb3duZXIiLCJpYXQiOjE2NzY1NDEyMDB9.signature",
   "user": {
     "userId": 1,
     "name": "John Doe",
@@ -64,7 +64,7 @@ Authenticate and receive JWT token.
 ```json
 {
   "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJKb2huIERvZSIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsInJvbGUiOiJIb21lb3duZXIiLCJpYXQiOjE2NzY1NDEyMDB9.signature",
   "user": {
     "userId": 1,
     "name": "John Doe",
@@ -108,7 +108,7 @@ Authorization: Bearer <token>
     "project_id": 1,
     "homeowner_id": 1,
     "title": "Kitchen Renovation",
-    "description": "Complete kitchen remodel...",
+    "description": "Complete kitchen remodel with new cabinets and countertops",
     "budget_min": 15000,
     "budget_max": 25000,
     "location": "Toronto, ON",
@@ -140,7 +140,7 @@ Authorization: Bearer <token>
       "homeowner_name": "John Doe",
       "homeowner_email": "john@example.com",
       "title": "Kitchen Renovation",
-      "description": "Complete kitchen remodel...",
+      "description": "Complete kitchen remodel with new cabinets and countertops",
       "budget_min": 15000,
       "budget_max": 25000,
       "location": "Toronto, ON",
@@ -171,8 +171,13 @@ Authorization: Bearer <token>
     {
       "project_id": 1,
       "title": "Kitchen Renovation",
+      "description": "Complete kitchen remodel with new cabinets and countertops",
+      "budget_min": 15000,
+      "budget_max": 25000,
+      "location": "Toronto, ON",
+      "status": "Open",
       "proposal_count": 3,
-      ...
+      "created_at": "2026-02-04T10:30:00.000Z"
     }
   ],
   "count": 1
@@ -200,7 +205,12 @@ Authorization: Bearer <token>
     "homeowner_name": "John Doe",
     "homeowner_email": "john@example.com",
     "title": "Kitchen Renovation",
-    ...
+    "description": "Complete kitchen remodel with new cabinets and countertops",
+    "budget_min": 15000,
+    "budget_max": 25000,
+    "location": "Toronto, ON",
+    "status": "Open",
+    "created_at": "2026-02-04T10:30:00.000Z"
   }
 }
 ```
@@ -282,7 +292,7 @@ Authorization: Bearer <token>
     "project_id": 1,
     "contractor_id": 2,
     "proposed_price": 20000,
-    "message": "I have 10 years...",
+    "message": "I have 10 years of experience in kitchen renovations and have completed 50+ projects",
     "status": "Pending",
     "created_at": "2026-02-04T11:00:00.000Z"
   }
@@ -313,7 +323,7 @@ Authorization: Bearer <token>
       "contractor_email": "jane@example.com",
       "is_verified": true,
       "proposed_price": 20000,
-      "message": "I have 10 years...",
+      "message": "I have 10 years of experience in kitchen renovations and have completed 50+ projects",
       "status": "Pending",
       "created_at": "2026-02-04T11:00:00.000Z"
     }
@@ -342,12 +352,12 @@ Authorization: Bearer <token>
       "proposal_id": 1,
       "project_id": 1,
       "project_title": "Kitchen Renovation",
-      "project_description": "Complete kitchen remodel...",
+      "project_description": "Complete kitchen remodel with new cabinets and countertops",
       "project_location": "Toronto, ON",
       "project_status": "Open",
       "proposed_price": 20000,
       "status": "Pending",
-      ...
+      "created_at": "2026-02-04T11:00:00.000Z"
     }
   ],
   "count": 1
