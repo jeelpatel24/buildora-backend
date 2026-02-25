@@ -1,13 +1,14 @@
 {
   "info": {
+    "_postman_id": "buildora-api-collection-v1",
     "name": "Buildora API",
-    "description": "Complete API collection for Buildora - Home Renovation Platform",
+    "description": "Complete API collection for Buildora - Home Renovation Project Matching Platform.\n\n**Live Base URL:** https://web-production-afb0.up.railway.app\n\n**How to use:**\n1. Run 'Register Homeowner' → copy the token → paste into the `homeowner_token` variable\n2. Run 'Register Contractor' → copy the token → paste into the `contractor_token` variable\n3. Run 'Login Admin' → copy the token → paste into the `admin_token` variable\n4. All protected routes will now work automatically\n\n**Default Admin:** admin@buildora.com / admin123",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:3000",
+      "value": "https://web-production-afb0.up.railway.app",
       "type": "string"
     },
     {
@@ -28,18 +29,40 @@
   ],
   "item": [
     {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Root - Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Public endpoint. Confirms the API is running and lists available route groups."
+          },
+          "response": [
+            {
+              "name": "200 OK - API Running",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Buildora API is running\",\n  \"version\": \"1.0.0\",\n  \"endpoints\": {\n    \"auth\": \"/api/auth\",\n    \"projects\": \"/api/projects\",\n    \"proposals\": \"/api/proposals\",\n    \"admin\": \"/api/admin\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Authentication",
       "item": [
         {
           "name": "Register Homeowner",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Alice Johnson\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"Homeowner\"\n}"
@@ -48,19 +71,38 @@
               "raw": "{{base_url}}/api/auth/register",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "register"]
+            },
+            "description": "Public route. Register a new Homeowner. Copy the returned token and paste it into the `homeowner_token` collection variable."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"User registered successfully\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 2,\n    \"name\": \"Alice Johnson\",\n    \"email\": \"alice@example.com\",\n    \"role\": \"Homeowner\",\n    \"isVerified\": false\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"errors\": [\n    { \"msg\": \"Valid email is required\", \"path\": \"email\" }\n  ]\n}"
+            },
+            {
+              "name": "409 Conflict - Email Already Exists",
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Email already registered\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Register Contractor",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Bob Smith\",\n  \"email\": \"bob@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"Contractor\"\n}"
@@ -69,19 +111,24 @@
               "raw": "{{base_url}}/api/auth/register",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "register"]
+            },
+            "description": "Public route. Register a new Contractor. Copy the returned token and paste it into the `contractor_token` variable."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"User registered successfully\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 3,\n    \"name\": \"Bob Smith\",\n    \"email\": \"bob@example.com\",\n    \"role\": \"Contractor\",\n    \"isVerified\": false\n  }\n}"
             }
-          }
+          ]
         },
         {
           "name": "Login Homeowner",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"password123\"\n}"
@@ -90,19 +137,31 @@
               "raw": "{{base_url}}/api/auth/login",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
+            },
+            "description": "Public route. Authenticate an existing Homeowner and receive a fresh JWT."
+          },
+          "response": [
+            {
+              "name": "200 OK - Login Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Login successful\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 2,\n    \"name\": \"Alice Johnson\",\n    \"email\": \"alice@example.com\",\n    \"role\": \"Homeowner\",\n    \"isVerified\": false\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized - Wrong Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Invalid email or password\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Login Contractor",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"bob@example.com\",\n  \"password\": \"password123\"\n}"
@@ -111,19 +170,24 @@
               "raw": "{{base_url}}/api/auth/login",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
+            },
+            "description": "Public route. Authenticate an existing Contractor and receive a fresh JWT."
+          },
+          "response": [
+            {
+              "name": "200 OK - Login Success",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Login successful\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 3,\n    \"name\": \"Bob Smith\",\n    \"email\": \"bob@example.com\",\n    \"role\": \"Contractor\",\n    \"isVerified\": false\n  }\n}"
             }
-          }
+          ]
         },
         {
           "name": "Login Admin",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@buildora.com\",\n  \"password\": \"admin123\"\n}"
@@ -132,8 +196,18 @@
               "raw": "{{base_url}}/api/auth/login",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
+            },
+            "description": "Public route. Login with the seeded Admin account. Copy the token and paste into the `admin_token` variable."
+          },
+          "response": [
+            {
+              "name": "200 OK - Admin Login",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Login successful\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 1,\n    \"name\": \"Admin User\",\n    \"email\": \"admin@buildora.com\",\n    \"role\": \"Admin\",\n    \"isVerified\": true\n  }\n}"
             }
-          }
+          ]
         }
       ]
     },
@@ -145,14 +219,8 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{homeowner_token}}" }
             ],
             "body": {
               "mode": "raw",
@@ -162,101 +230,198 @@
               "raw": "{{base_url}}/api/projects",
               "host": ["{{base_url}}"],
               "path": ["api", "projects"]
+            },
+            "description": "Protected - Homeowner only. Creates a new renovation project. homeowner_id is set from the JWT automatically."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Project created successfully\",\n  \"project\": {\n    \"project_id\": 1,\n    \"homeowner_id\": 2,\n    \"title\": \"Kitchen Renovation\",\n    \"description\": \"Complete kitchen remodel with new cabinets, countertops, and appliances\",\n    \"budget_min\": \"15000.00\",\n    \"budget_max\": \"25000.00\",\n    \"location\": \"Toronto, ON\",\n    \"status\": \"Open\",\n    \"created_at\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized - No Token",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Access denied. No token provided.\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Wrong Role",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Access denied. Required role: Homeowner\"\n}"
             }
-          }
+          ]
         },
         {
-          "name": "Get All Projects",
+          "name": "Get All Open Projects",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{contractor_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/projects",
               "host": ["{{base_url}}"],
               "path": ["api", "projects"]
+            },
+            "description": "Protected - Any authenticated user. Returns all projects with status='Open', including homeowner details."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"homeowner_id\": 2,\n      \"title\": \"Kitchen Renovation\",\n      \"description\": \"Complete kitchen remodel...\",\n      \"budget_min\": \"15000.00\",\n      \"budget_max\": \"25000.00\",\n      \"location\": \"Toronto, ON\",\n      \"status\": \"Open\",\n      \"created_at\": \"2024-01-15T10:30:00.000Z\",\n      \"homeowner_name\": \"Alice Johnson\",\n      \"homeowner_email\": \"alice@example.com\"\n    }\n  ],\n  \"count\": 1\n}"
             }
-          }
+          ]
         },
         {
           "name": "Get My Projects",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/projects/my",
               "host": ["{{base_url}}"],
               "path": ["api", "projects", "my"]
+            },
+            "description": "Protected - Homeowner only. Returns all projects owned by the authenticated homeowner with proposal counts."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"title\": \"Kitchen Renovation\",\n      \"status\": \"Open\",\n      \"proposal_count\": \"2\"\n    }\n  ],\n  \"count\": 1\n}"
             }
-          }
+          ]
         },
         {
           "name": "Get Project by ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{contractor_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/projects/1",
               "host": ["{{base_url}}"],
               "path": ["api", "projects", "1"]
+            },
+            "description": "Protected - Any authenticated user. Returns a single project by ID. Returns 404 if not found."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"project\": {\n    \"project_id\": 1,\n    \"title\": \"Kitchen Renovation\",\n    \"homeowner_name\": \"Alice Johnson\",\n    \"homeowner_email\": \"alice@example.com\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Project not found\"\n}"
+            },
+            {
+              "name": "400 Bad Request - Invalid ID",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"errors\": [{ \"msg\": \"ID must be a positive integer\", \"path\": \"id\" }]\n}"
             }
-          }
+          ]
         },
         {
           "name": "Update Project",
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{homeowner_token}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Kitchen Renovation - Updated\",\n  \"description\": \"Updated description with more details\",\n  \"budget_min\": 18000,\n  \"budget_max\": 28000,\n  \"location\": \"Toronto, ON\"\n}"
+              "raw": "{\n  \"title\": \"Kitchen Renovation - Updated\",\n  \"description\": \"Updated description with more details about the scope of work\",\n  \"budget_min\": 18000,\n  \"budget_max\": 28000,\n  \"location\": \"Toronto, ON\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/projects/1",
               "host": ["{{base_url}}"],
               "path": ["api", "projects", "1"]
+            },
+            "description": "Protected - Homeowner only (must own the project). Returns 404 if project doesn't exist, 403 if not the owner."
+          },
+          "response": [
+            {
+              "name": "200 OK - Updated",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Project updated successfully\",\n  \"project\": {\n    \"project_id\": 1,\n    \"title\": \"Kitchen Renovation - Updated\",\n    \"budget_min\": \"18000.00\",\n    \"budget_max\": \"28000.00\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Project not found\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Not Owner",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You do not have permission to update this project\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Delete Project",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/projects/1",
               "host": ["{{base_url}}"],
               "path": ["api", "projects", "1"]
+            },
+            "description": "Protected - Homeowner only (must own the project). Cascade-deletes all proposals. Blocked if project has an accepted proposal."
+          },
+          "response": [
+            {
+              "name": "200 OK - Deleted",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Project deleted successfully\"\n}"
+            },
+            {
+              "name": "400 Bad Request - Has Accepted Proposal",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Cannot delete project with accepted proposals\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Project not found\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Not Owner",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You do not have permission to delete this project\"\n}"
             }
-          }
+          ]
         }
       ]
     },
@@ -268,93 +433,173 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{contractor_token}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{contractor_token}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"project_id\": 1,\n  \"proposed_price\": 20000,\n  \"message\": \"I have 10 years of experience in kitchen renovations. I can complete this project in 6 weeks with high-quality materials.\"\n}"
+              "raw": "{\n  \"project_id\": 1,\n  \"proposed_price\": 20000,\n  \"message\": \"I have 10 years of experience in kitchen renovations. I can complete this project in 6 weeks.\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/proposals",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals"]
+            },
+            "description": "Protected - Contractor only. Submit a proposal for an open project. One proposal per contractor per project."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Proposal submitted successfully\",\n  \"proposal\": {\n    \"proposal_id\": 1,\n    \"project_id\": 1,\n    \"contractor_id\": 3,\n    \"proposed_price\": \"20000.00\",\n    \"message\": \"I have 10 years of experience...\",\n    \"status\": \"Pending\",\n    \"created_at\": \"2024-01-15T11:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found - Project Not Open",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Project not found or not accepting proposals\"\n}"
+            },
+            {
+              "name": "409 Conflict - Already Submitted",
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You have already submitted a proposal for this project\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Get Proposals for Project",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/proposals/project/1",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals", "project", "1"]
+            },
+            "description": "Protected - Homeowner only (must own the project). Returns 404 if project missing, 403 if not the owner."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"proposals\": [\n    {\n      \"proposal_id\": 1,\n      \"proposed_price\": \"20000.00\",\n      \"status\": \"Pending\",\n      \"contractor_name\": \"Bob Smith\",\n      \"contractor_email\": \"bob@example.com\",\n      \"contractor_verified\": false\n    }\n  ],\n  \"count\": 1\n}"
+            },
+            {
+              "name": "404 Not Found - Project Missing",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Project not found\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Not Owner",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You do not have permission to view proposals for this project\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Get My Proposals",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{contractor_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/proposals/my",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals", "my"]
+            },
+            "description": "Protected - Contractor only. Returns all proposals submitted by the authenticated contractor with related project info."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"proposals\": [\n    {\n      \"proposal_id\": 1,\n      \"proposed_price\": \"20000.00\",\n      \"status\": \"Pending\",\n      \"project_title\": \"Kitchen Renovation\",\n      \"project_location\": \"Toronto, ON\",\n      \"project_status\": \"Open\"\n    }\n  ],\n  \"count\": 1\n}"
             }
-          }
+          ]
         },
         {
           "name": "Accept Proposal",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{homeowner_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/proposals/1/accept",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals", "1", "accept"]
+            },
+            "description": "Protected - Homeowner only (must own the project). Atomically accepts this proposal, rejects all others, and closes the project. Uses a DB transaction."
+          },
+          "response": [
+            {
+              "name": "200 OK - Accepted",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Proposal accepted successfully\",\n  \"proposalId\": \"1\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Proposal not found\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Not Owner",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You do not have permission to accept this proposal\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Withdraw Proposal",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{contractor_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/proposals/1",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals", "1"]
+            },
+            "description": "Protected - Contractor only (must own the proposal). Only works if the proposal is still Pending. Returns 400 if already accepted/rejected."
+          },
+          "response": [
+            {
+              "name": "200 OK - Withdrawn",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Proposal withdrawn successfully\"\n}"
+            },
+            {
+              "name": "400 Bad Request - Not Pending",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Only pending proposals can be withdrawn\"\n}"
+            },
+            {
+              "name": "403 Forbidden - Not Owner",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You do not have permission to delete this proposal\"\n}"
             }
-          }
+          ]
         }
       ]
     },
@@ -365,69 +610,110 @@
           "name": "Get All Users",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/users",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "users"]
+            },
+            "description": "Protected - Admin only. Returns all users (excludes password_hash). Ordered newest first."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"users\": [\n    { \"user_id\": 3, \"name\": \"Bob Smith\", \"email\": \"bob@example.com\", \"role\": \"Contractor\", \"is_verified\": false },\n    { \"user_id\": 2, \"name\": \"Alice Johnson\", \"email\": \"alice@example.com\", \"role\": \"Homeowner\", \"is_verified\": false },\n    { \"user_id\": 1, \"name\": \"Admin User\", \"email\": \"admin@buildora.com\", \"role\": \"Admin\", \"is_verified\": true }\n  ],\n  \"count\": 3\n}"
             }
-          }
+          ]
         },
         {
           "name": "Get Platform Stats",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/stats",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "stats"]
+            },
+            "description": "Protected - Admin only. Returns aggregated counts: users by role, projects by status, proposals by status, verified contractors."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"stats\": {\n    \"users\": [\n      { \"role\": \"Admin\", \"count\": \"1\" },\n      { \"role\": \"Homeowner\", \"count\": \"1\" },\n      { \"role\": \"Contractor\", \"count\": \"1\" }\n    ],\n    \"projects\": [{ \"status\": \"Open\", \"count\": \"1\" }],\n    \"proposals\": [{ \"status\": \"Pending\", \"count\": \"1\" }],\n    \"verifiedContractors\": \"0\"\n  }\n}"
             }
-          }
+          ]
         },
         {
           "name": "Verify Contractor",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/verify/2",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "verify", "2"]
+            },
+            "description": "Protected - Admin only. Sets is_verified=TRUE for a Contractor. Replace '2' with the actual contractor's user_id."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Contractor verified successfully\"\n}"
+            },
+            {
+              "name": "404 Not Found - Not a Contractor",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Contractor not found\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Deactivate User",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/deactivate/3",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "deactivate", "3"]
+            },
+            "description": "Protected - Admin only. Soft-deactivates a user. Admin cannot deactivate themselves. Replace '3' with the target user_id."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"User deactivated successfully\"\n}"
+            },
+            {
+              "name": "400 Bad Request - Self-Deactivation",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"You cannot deactivate your own account\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"User not found\"\n}"
             }
-          }
+          ]
         }
       ]
     }
