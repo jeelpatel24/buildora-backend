@@ -2,30 +2,17 @@
   "info": {
     "_postman_id": "buildora-api-collection-v1",
     "name": "Buildora API",
-    "description": "Complete API collection for Buildora - Home Renovation Project Matching Platform.\n\n**Live Base URL:** https://web-production-afb0.up.railway.app\n\n**How to use:**\n1. Run 'Register Homeowner' → copy the token → paste into the `homeowner_token` variable\n2. Run 'Register Contractor' → copy the token → paste into the `contractor_token` variable\n3. Run 'Login Admin' → copy the token → paste into the `admin_token` variable\n4. All protected routes will now work automatically\n\n**Default Admin:** admin@buildora.com / admin123",
+    "description": "Complete API collection for Buildora - Home Renovation Project Matching Platform.\n\n**Live Base URL:** https://web-production-afb0.up.railway.app\n\n**How to use:**\n1. Import this collection and run it with the Collection Runner\n2. Tokens and IDs are captured automatically via test scripts — no manual copy-paste needed\n3. On re-runs, the Login requests refresh tokens automatically (Register will 409, Login will succeed)\n\n**Default Admin:** admin@buildora.com / admin123\n\n**Runner order:** Auth → Projects → Proposals → Admin → Cleanup",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "base_url",
-      "value": "https://web-production-afb0.up.railway.app",
-      "type": "string"
-    },
-    {
-      "key": "homeowner_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "contractor_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "admin_token",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "base_url", "value": "https://web-production-afb0.up.railway.app", "type": "string" },
+    { "key": "homeowner_token", "value": "", "type": "string" },
+    { "key": "contractor_token", "value": "", "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "project_id", "value": "", "type": "string" },
+    { "key": "proposal_id", "value": "", "type": "string" },
+    { "key": "contractor_user_id", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -33,6 +20,23 @@
       "item": [
         {
           "name": "API Root - Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('API is running', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -41,7 +45,7 @@
               "host": ["{{base_url}}"],
               "path": [""]
             },
-            "description": "Public endpoint. Confirms the API is running and lists available route groups."
+            "description": "Public endpoint. Confirms the API is running."
           },
           "response": [
             {
@@ -60,6 +64,31 @@
       "item": [
         {
           "name": "Register Homeowner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 (created) or 409 (already exists)', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Response has token', function () {",
+                  "        pm.expect(json).to.have.property('token');",
+                  "    });",
+                  "    pm.test('User role is Homeowner', function () {",
+                  "        pm.expect(json.user.role).to.eql('Homeowner');",
+                  "    });",
+                  "}",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('homeowner_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -72,7 +101,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "register"]
             },
-            "description": "Public route. Register a new Homeowner. Copy the returned token and paste it into the `homeowner_token` collection variable."
+            "description": "Public route. Register a new Homeowner. Returns 409 on re-runs (email already exists) — both are valid outcomes."
           },
           "response": [
             {
@@ -81,13 +110,6 @@
               "code": 201,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"message\": \"User registered successfully\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 2,\n    \"name\": \"Alice Johnson\",\n    \"email\": \"alice@example.com\",\n    \"role\": \"Homeowner\",\n    \"isVerified\": false\n  }\n}"
-            },
-            {
-              "name": "400 Bad Request - Validation Error",
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"errors\": [\n    { \"msg\": \"Valid email is required\", \"path\": \"email\" }\n  ]\n}"
             },
             {
               "name": "409 Conflict - Email Already Exists",
@@ -100,6 +122,34 @@
         },
         {
           "name": "Register Contractor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201 (created) or 409 (already exists)', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Response has token', function () {",
+                  "        pm.expect(json).to.have.property('token');",
+                  "    });",
+                  "    pm.test('User role is Contractor', function () {",
+                  "        pm.expect(json.user.role).to.eql('Contractor');",
+                  "    });",
+                  "}",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('contractor_token', json.token);",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('contractor_user_id', json.user.userId.toString());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -112,7 +162,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "register"]
             },
-            "description": "Public route. Register a new Contractor. Copy the returned token and paste it into the `contractor_token` variable."
+            "description": "Public route. Register a new Contractor. Returns 409 on re-runs — both are valid outcomes."
           },
           "response": [
             {
@@ -121,11 +171,43 @@
               "code": 201,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"message\": \"User registered successfully\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"userId\": 3,\n    \"name\": \"Bob Smith\",\n    \"email\": \"bob@example.com\",\n    \"role\": \"Contractor\",\n    \"isVerified\": false\n  }\n}"
+            },
+            {
+              "name": "409 Conflict - Email Already Exists",
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Email already registered\"\n}"
             }
           ]
         },
         {
           "name": "Login Homeowner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('token');",
+                  "});",
+                  "pm.test('User role is Homeowner', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user.role).to.eql('Homeowner');",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('homeowner_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -138,7 +220,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Public route. Authenticate an existing Homeowner and receive a fresh JWT."
+            "description": "Public route. Refreshes homeowner_token on every run (works as fallback when Register returns 409)."
           },
           "response": [
             {
@@ -159,6 +241,34 @@
         },
         {
           "name": "Login Contractor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('token');",
+                  "});",
+                  "pm.test('User role is Contractor', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user.role).to.eql('Contractor');",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('contractor_token', json.token);",
+                  "}",
+                  "if (json.user && json.user.userId) {",
+                  "    pm.collectionVariables.set('contractor_user_id', json.user.userId.toString());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -171,7 +281,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Public route. Authenticate an existing Contractor and receive a fresh JWT."
+            "description": "Public route. Refreshes contractor_token and contractor_user_id on every run."
           },
           "response": [
             {
@@ -185,6 +295,31 @@
         },
         {
           "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('token');",
+                  "});",
+                  "pm.test('User role is Admin', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user.role).to.eql('Admin');",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('admin_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -197,7 +332,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Public route. Login with the seeded Admin account. Copy the token and paste into the `admin_token` variable."
+            "description": "Public route. Login with the seeded Admin account. Token is auto-captured into admin_token."
           },
           "response": [
             {
@@ -216,6 +351,32 @@
       "item": [
         {
           "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response has project object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('project');",
+                  "    pm.expect(json.project).to.have.property('project_id');",
+                  "});",
+                  "pm.test('Project status is Open', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.project.status).to.eql('Open');",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.project && json.project.project_id) {",
+                  "    pm.collectionVariables.set('project_id', json.project.project_id.toString());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -231,7 +392,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "projects"]
             },
-            "description": "Protected - Homeowner only. Creates a new renovation project. homeowner_id is set from the JWT automatically."
+            "description": "Protected - Homeowner only. project_id is auto-captured for all subsequent requests."
           },
           "response": [
             {
@@ -259,6 +420,28 @@
         },
         {
           "name": "Get All Open Projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has projects array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('projects');",
+                  "    pm.expect(json.projects).to.be.an('array');",
+                  "});",
+                  "pm.test('Response has count', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('count');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
@@ -267,7 +450,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "projects"]
             },
-            "description": "Protected - Any authenticated user. Returns all projects with status='Open', including homeowner details."
+            "description": "Protected - Any authenticated user. Returns all projects with status='Open'."
           },
           "response": [
             {
@@ -275,12 +458,30 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"homeowner_id\": 2,\n      \"title\": \"Kitchen Renovation\",\n      \"description\": \"Complete kitchen remodel...\",\n      \"budget_min\": \"15000.00\",\n      \"budget_max\": \"25000.00\",\n      \"location\": \"Toronto, ON\",\n      \"status\": \"Open\",\n      \"created_at\": \"2024-01-15T10:30:00.000Z\",\n      \"homeowner_name\": \"Alice Johnson\",\n      \"homeowner_email\": \"alice@example.com\"\n    }\n  ],\n  \"count\": 1\n}"
+              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"title\": \"Kitchen Renovation\",\n      \"status\": \"Open\",\n      \"homeowner_name\": \"Alice Johnson\",\n      \"homeowner_email\": \"alice@example.com\"\n    }\n  ],\n  \"count\": 1\n}"
             }
           ]
         },
         {
           "name": "Get My Projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has projects array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('projects');",
+                  "    pm.expect(json.projects).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
@@ -289,7 +490,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "projects", "my"]
             },
-            "description": "Protected - Homeowner only. Returns all projects owned by the authenticated homeowner with proposal counts."
+            "description": "Protected - Homeowner only. Returns all projects owned by the authenticated homeowner."
           },
           "response": [
             {
@@ -297,21 +498,42 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"title\": \"Kitchen Renovation\",\n      \"status\": \"Open\",\n      \"proposal_count\": \"2\"\n    }\n  ],\n  \"count\": 1\n}"
+              "body": "{\n  \"projects\": [\n    {\n      \"project_id\": 1,\n      \"title\": \"Kitchen Renovation\",\n      \"status\": \"Open\",\n      \"proposal_count\": \"0\"\n    }\n  ],\n  \"count\": 1\n}"
             }
           ]
         },
         {
           "name": "Get Project by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has project object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('project');",
+                  "});",
+                  "pm.test('Project ID matches', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.project.project_id.toString()).to.eql(pm.collectionVariables.get('project_id'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/projects/1",
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "projects", "1"]
+              "path": ["api", "projects", "{{project_id}}"]
             },
-            "description": "Protected - Any authenticated user. Returns a single project by ID. Returns 404 if not found."
+            "description": "Protected - Any authenticated user. Uses project_id captured from Create Project."
           },
           "response": [
             {
@@ -327,18 +549,29 @@
               "code": 404,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"error\": \"Project not found\"\n}"
-            },
-            {
-              "name": "400 Bad Request - Invalid ID",
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"errors\": [{ \"msg\": \"ID must be a positive integer\", \"path\": \"id\" }]\n}"
             }
           ]
         },
         {
           "name": "Update Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has updated project', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('project');",
+                  "    pm.expect(json.project.title).to.eql('Kitchen Renovation - Updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [
@@ -350,11 +583,11 @@
               "raw": "{\n  \"title\": \"Kitchen Renovation - Updated\",\n  \"description\": \"Updated description with more details about the scope of work\",\n  \"budget_min\": 18000,\n  \"budget_max\": 28000,\n  \"location\": \"Toronto, ON\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/projects/1",
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "projects", "1"]
+              "path": ["api", "projects", "{{project_id}}"]
             },
-            "description": "Protected - Homeowner only (must own the project). Returns 404 if project doesn't exist, 403 if not the owner."
+            "description": "Protected - Homeowner only (must own the project). Uses project_id captured from Create Project."
           },
           "response": [
             {
@@ -365,61 +598,11 @@
               "body": "{\n  \"message\": \"Project updated successfully\",\n  \"project\": {\n    \"project_id\": 1,\n    \"title\": \"Kitchen Renovation - Updated\",\n    \"budget_min\": \"18000.00\",\n    \"budget_max\": \"28000.00\"\n  }\n}"
             },
             {
-              "name": "404 Not Found",
-              "status": "Not Found",
-              "code": 404,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"Project not found\"\n}"
-            },
-            {
               "name": "403 Forbidden - Not Owner",
               "status": "Forbidden",
               "code": 403,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"error\": \"You do not have permission to update this project\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Delete Project",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
-            "url": {
-              "raw": "{{base_url}}/api/projects/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "projects", "1"]
-            },
-            "description": "Protected - Homeowner only (must own the project). Cascade-deletes all proposals. Blocked if project has an accepted proposal."
-          },
-          "response": [
-            {
-              "name": "200 OK - Deleted",
-              "status": "OK",
-              "code": 200,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"message\": \"Project deleted successfully\"\n}"
-            },
-            {
-              "name": "400 Bad Request - Has Accepted Proposal",
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"Cannot delete project with accepted proposals\"\n}"
-            },
-            {
-              "name": "404 Not Found",
-              "status": "Not Found",
-              "code": 404,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"Project not found\"\n}"
-            },
-            {
-              "name": "403 Forbidden - Not Owner",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"You do not have permission to delete this project\"\n}"
             }
           ]
         }
@@ -430,6 +613,32 @@
       "item": [
         {
           "name": "Submit Proposal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response has proposal object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('proposal');",
+                  "    pm.expect(json.proposal).to.have.property('proposal_id');",
+                  "});",
+                  "pm.test('Proposal status is Pending', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.proposal.status).to.eql('Pending');",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json.proposal && json.proposal.proposal_id) {",
+                  "    pm.collectionVariables.set('proposal_id', json.proposal.proposal_id.toString());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -438,14 +647,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"project_id\": 1,\n  \"proposed_price\": 20000,\n  \"message\": \"I have 10 years of experience in kitchen renovations. I can complete this project in 6 weeks.\"\n}"
+              "raw": "{\n  \"project_id\": {{project_id}},\n  \"proposed_price\": 20000,\n  \"message\": \"I have 10 years of experience in kitchen renovations. I can complete this project in 6 weeks.\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/proposals",
               "host": ["{{base_url}}"],
               "path": ["api", "proposals"]
             },
-            "description": "Protected - Contractor only. Submit a proposal for an open project. One proposal per contractor per project."
+            "description": "Protected - Contractor only. Uses project_id captured from Create Project. proposal_id is auto-captured."
           },
           "response": [
             {
@@ -473,15 +682,37 @@
         },
         {
           "name": "Get Proposals for Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has proposals array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('proposals');",
+                  "    pm.expect(json.proposals).to.be.an('array');",
+                  "});",
+                  "pm.test('At least one proposal exists', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.proposals.length).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/proposals/project/1",
+              "raw": "{{base_url}}/api/proposals/project/{{project_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "proposals", "project", "1"]
+              "path": ["api", "proposals", "project", "{{project_id}}"]
             },
-            "description": "Protected - Homeowner only (must own the project). Returns 404 if project missing, 403 if not the owner."
+            "description": "Protected - Homeowner only (must own the project). Uses project_id captured from Create Project."
           },
           "response": [
             {
@@ -490,13 +721,6 @@
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"proposals\": [\n    {\n      \"proposal_id\": 1,\n      \"proposed_price\": \"20000.00\",\n      \"status\": \"Pending\",\n      \"contractor_name\": \"Bob Smith\",\n      \"contractor_email\": \"bob@example.com\",\n      \"contractor_verified\": false\n    }\n  ],\n  \"count\": 1\n}"
-            },
-            {
-              "name": "404 Not Found - Project Missing",
-              "status": "Not Found",
-              "code": 404,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"Project not found\"\n}"
             },
             {
               "name": "403 Forbidden - Not Owner",
@@ -509,6 +733,24 @@
         },
         {
           "name": "Get My Proposals",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has proposals array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('proposals');",
+                  "    pm.expect(json.proposals).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
@@ -517,7 +759,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "proposals", "my"]
             },
-            "description": "Protected - Contractor only. Returns all proposals submitted by the authenticated contractor with related project info."
+            "description": "Protected - Contractor only. Returns all proposals submitted by the authenticated contractor."
           },
           "response": [
             {
@@ -525,21 +767,38 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"proposals\": [\n    {\n      \"proposal_id\": 1,\n      \"proposed_price\": \"20000.00\",\n      \"status\": \"Pending\",\n      \"project_title\": \"Kitchen Renovation\",\n      \"project_location\": \"Toronto, ON\",\n      \"project_status\": \"Open\"\n    }\n  ],\n  \"count\": 1\n}"
+              "body": "{\n  \"proposals\": [\n    {\n      \"proposal_id\": 1,\n      \"proposed_price\": \"20000.00\",\n      \"status\": \"Pending\",\n      \"project_title\": \"Kitchen Renovation - Updated\",\n      \"project_location\": \"Toronto, ON\",\n      \"project_status\": \"Open\"\n    }\n  ],\n  \"count\": 1\n}"
             }
           ]
         },
         {
           "name": "Accept Proposal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response confirms acceptance', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Proposal accepted successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/proposals/1/accept",
+              "raw": "{{base_url}}/api/proposals/{{proposal_id}}/accept",
               "host": ["{{base_url}}"],
-              "path": ["api", "proposals", "1", "accept"]
+              "path": ["api", "proposals", "{{proposal_id}}", "accept"]
             },
-            "description": "Protected - Homeowner only (must own the project). Atomically accepts this proposal, rejects all others, and closes the project. Uses a DB transaction."
+            "description": "Protected - Homeowner only. Accepts the proposal atomically. Uses proposal_id captured from Submit Proposal."
           },
           "response": [
             {
@@ -555,36 +814,39 @@
               "code": 404,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"error\": \"Proposal not found\"\n}"
-            },
-            {
-              "name": "403 Forbidden - Not Owner",
-              "status": "Forbidden",
-              "code": 403,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"You do not have permission to accept this proposal\"\n}"
             }
           ]
         },
         {
-          "name": "Withdraw Proposal",
+          "name": "Withdraw Proposal (expects 400 - already accepted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 - cannot withdraw accepted proposal', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error message is correct', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.error).to.eql('Only pending proposals can be withdrawn');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{contractor_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/proposals/1",
+              "raw": "{{base_url}}/api/proposals/{{proposal_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "proposals", "1"]
+              "path": ["api", "proposals", "{{proposal_id}}"]
             },
-            "description": "Protected - Contractor only (must own the proposal). Only works if the proposal is still Pending. Returns 400 if already accepted/rejected."
+            "description": "Protected - Contractor only. Runs AFTER Accept, so the proposal is no longer Pending. This test intentionally expects 400 to verify the business rule: only Pending proposals can be withdrawn."
           },
           "response": [
-            {
-              "name": "200 OK - Withdrawn",
-              "status": "OK",
-              "code": 200,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"message\": \"Proposal withdrawn successfully\"\n}"
-            },
             {
               "name": "400 Bad Request - Not Pending",
               "status": "Bad Request",
@@ -593,11 +855,11 @@
               "body": "{\n  \"error\": \"Only pending proposals can be withdrawn\"\n}"
             },
             {
-              "name": "403 Forbidden - Not Owner",
-              "status": "Forbidden",
-              "code": 403,
+              "name": "200 OK - Withdrawn (if run before Accept)",
+              "status": "OK",
+              "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"You do not have permission to delete this proposal\"\n}"
+              "body": "{\n  \"message\": \"Proposal withdrawn successfully\"\n}"
             }
           ]
         }
@@ -608,6 +870,30 @@
       "item": [
         {
           "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has users array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('users');",
+                  "    pm.expect(json.users).to.be.an('array');",
+                  "});",
+                  "pm.test('No password_hash exposed', function () {",
+                  "    var json = pm.response.json();",
+                  "    json.users.forEach(function(user) {",
+                  "        pm.expect(user).to.not.have.property('password_hash');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
@@ -616,7 +902,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "users"]
             },
-            "description": "Protected - Admin only. Returns all users (excludes password_hash). Ordered newest first."
+            "description": "Protected - Admin only. Returns all users (excludes password_hash)."
           },
           "response": [
             {
@@ -630,6 +916,29 @@
         },
         {
           "name": "Get Platform Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has stats object', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('stats');",
+                  "});",
+                  "pm.test('Stats has users, projects, proposals', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.stats).to.have.property('users');",
+                  "    pm.expect(json.stats).to.have.property('projects');",
+                  "    pm.expect(json.stats).to.have.property('proposals');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
@@ -638,7 +947,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "stats"]
             },
-            "description": "Protected - Admin only. Returns aggregated counts: users by role, projects by status, proposals by status, verified contractors."
+            "description": "Protected - Admin only. Returns aggregated platform statistics."
           },
           "response": [
             {
@@ -646,21 +955,38 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"stats\": {\n    \"users\": [\n      { \"role\": \"Admin\", \"count\": \"1\" },\n      { \"role\": \"Homeowner\", \"count\": \"1\" },\n      { \"role\": \"Contractor\", \"count\": \"1\" }\n    ],\n    \"projects\": [{ \"status\": \"Open\", \"count\": \"1\" }],\n    \"proposals\": [{ \"status\": \"Pending\", \"count\": \"1\" }],\n    \"verifiedContractors\": \"0\"\n  }\n}"
+              "body": "{\n  \"stats\": {\n    \"users\": [\n      { \"role\": \"Admin\", \"count\": \"1\" },\n      { \"role\": \"Homeowner\", \"count\": \"1\" },\n      { \"role\": \"Contractor\", \"count\": \"1\" }\n    ],\n    \"projects\": [{ \"status\": \"Accepted\", \"count\": \"1\" }],\n    \"proposals\": [{ \"status\": \"Accepted\", \"count\": \"1\" }],\n    \"verifiedContractors\": \"0\"\n  }\n}"
             }
           ]
         },
         {
           "name": "Verify Contractor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Contractor verified successfully', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Contractor verified successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/admin/verify/2",
+              "raw": "{{base_url}}/api/admin/verify/{{contractor_user_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "verify", "2"]
+              "path": ["api", "admin", "verify", "{{contractor_user_id}}"]
             },
-            "description": "Protected - Admin only. Sets is_verified=TRUE for a Contractor. Replace '2' with the actual contractor's user_id."
+            "description": "Protected - Admin only. Uses contractor_user_id captured from Login Contractor."
           },
           "response": [
             {
@@ -681,15 +1007,32 @@
         },
         {
           "name": "Deactivate User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('User deactivated successfully', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('User deactivated successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
-              "raw": "{{base_url}}/api/admin/deactivate/3",
+              "raw": "{{base_url}}/api/admin/deactivate/{{contractor_user_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "admin", "deactivate", "3"]
+              "path": ["api", "admin", "deactivate", "{{contractor_user_id}}"]
             },
-            "description": "Protected - Admin only. Soft-deactivates a user. Admin cannot deactivate themselves. Replace '3' with the target user_id."
+            "description": "Protected - Admin only. Uses contractor_user_id captured from Login Contractor."
           },
           "response": [
             {
@@ -700,18 +1043,62 @@
               "body": "{\n  \"message\": \"User deactivated successfully\"\n}"
             },
             {
-              "name": "400 Bad Request - Self-Deactivation",
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"error\": \"You cannot deactivate your own account\"\n}"
-            },
-            {
               "name": "404 Not Found",
               "status": "Not Found",
               "code": 404,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"error\": \"User not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Project (expects 400 - has accepted proposal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 - cannot delete project with accepted proposal', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test('Error message is correct', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.error).to.eql('Cannot delete project with accepted proposals');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{homeowner_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}"]
+            },
+            "description": "Protected - Homeowner only. Runs AFTER Accept Proposal closes the project. This test intentionally expects 400 to verify the business rule: projects with accepted proposals cannot be deleted."
+          },
+          "response": [
+            {
+              "name": "400 Bad Request - Has Accepted Proposal",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Cannot delete project with accepted proposals\"\n}"
+            },
+            {
+              "name": "200 OK - Deleted (if no accepted proposal)",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"message\": \"Project deleted successfully\"\n}"
             }
           ]
         }
