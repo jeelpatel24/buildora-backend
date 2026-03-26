@@ -1,0 +1,64 @@
+/* ============================================================
+   APP SHELL STYLES
+   ============================================================ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+}
+
+/* Password strength bar */
+.pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pw-strength-bar {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.pw-strength-segment {
+  height: 3px;
+  flex: 1;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+.pw-strength-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: right;
+}
+
+/* Footer */
+.app-footer {
+  border-top: 1px solid var(--clr-border);
+  padding: 20px 0;
+  margin-top: 40px;
+}
+
+.app-footer .container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--clr-text-dim);
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.footer-divider {
+  opacity: 0.4;
+}

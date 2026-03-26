@@ -1,0 +1,134 @@
+.proposal-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+
+.proposal-card--accepted {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.proposal-card--rejected {
+  opacity: 0.55;
+}
+
+.prpc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prpc-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.prpc-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--clr-blue-dim);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.prpc-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+}
+
+.prpc-project-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prpc-date {
+  font-size: 0.78rem;
+  color: var(--clr-text-dim);
+  margin-top: 2px;
+}
+
+.prpc-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.prpc-price {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.prpc-message {
+  font-size: 0.875rem;
+  color: var(--clr-text-muted);
+  line-height: 1.6;
+  padding-top: 8px;
+  border-top: 1px solid var(--clr-border);
+}
+
+.prpc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.prpc-btn-accept {
+  background: var(--clr-green);
+  border: none;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.prpc-btn-accept:hover {
+  opacity: 0.85;
+}
+
+.prpc-btn-withdraw {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--clr-red);
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+  transition: all 0.15s;
+}
+
+.prpc-btn-withdraw:hover {
+  background: var(--clr-red-glow);
+}
+
+.prpc-accepted-banner {
+  background: var(--clr-blue-glow);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--clr-blue);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.83rem;
+  font-weight: 500;
+}
