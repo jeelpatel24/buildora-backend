@@ -8,12 +8,11 @@
  *   - API errors are extracted from error.response.data.error.
  *   - Loading state disables the submit button while the request is in flight.
  *   - Location field uses OpenStreetMap Nominatim API for real-address autocomplete.
- *     Only addresses confirmed from the suggestion list are accepted.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useData, useNav }                           from '../context/AppContext';
-import AlertMessage                                  from '../components/AlertMessage';
+import { useState, useEffect, useRef } from 'react';
+import { useData, useNav }             from '../context/AppContext';
+import AlertMessage                    from '../components/AlertMessage';
 import './CreateProjectPage.css';
 
 const INITIAL_FORM = {
@@ -35,82 +34,6 @@ function formatCurrency(v) {
   }).format(v);
 }
 
-/* ── Location Autocomplete Hook ── */
-function useLocationAutocomplete() {
-  const [query,       setQuery]       = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [validated,   setValidated]   = useState(false);
-  const debounceRef = useRef(null);
-
-  const search = useCallback((value) => {
-    setQuery(value);
-    setValidated(false);
-
-    clearTimeout(debounceRef.current);
-    if (!value || value.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const url =
-          `https://nominatim.openstreetmap.org/search` +
-          `?q=${encodeURIComponent(value)}` +
-          `&format=json&addressdetails=1&limit=6` +
-          `&featuretype=city,town,municipality,suburb,county`;
-        const res  = await fetch(url, {
-          headers: { 'Accept-Language': 'en' },
-        });
-        const data = await res.json();
-
-        // Build clean display labels
-        const results = data.map((item) => {
-          const a    = item.address || {};
-          const city = a.city || a.town || a.village || a.municipality || a.county || '';
-          const prov = a.state || a.province || '';
-          const country = a.country_code?.toUpperCase() || '';
-          const label = [city, prov, country].filter(Boolean).join(', ') || item.display_name.split(',').slice(0, 3).join(',').trim();
-          return { id: item.place_id, label, full: item.display_name };
-        });
-
-        // Deduplicate by label
-        const seen = new Set();
-        const unique = results.filter(r => {
-          if (seen.has(r.label)) return false;
-          seen.add(r.label);
-          return true;
-        });
-
-        setSuggestions(unique.slice(0, 5));
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 380);
-  }, []);
-
-  function pick(label) {
-    setQuery(label);
-    setValidated(true);
-    setSuggestions([]);
-  }
-
-  function clear() {
-    setQuery('');
-    setValidated(false);
-    setSuggestions([]);
-    clearTimeout(debounceRef.current);
-  }
-
-  return { query, suggestions, isSearching, validated, search, pick, clear };
-}
-
-/* ── Page Component ── */
-
 export default function CreateProjectPage() {
   const { addProject } = useData();
   const { navigate }   = useNav();
@@ -122,37 +45,99 @@ export default function CreateProjectPage() {
   const [isLoading,   setIsLoading]   = useState(false);
   const [charCount,   setCharCount]   = useState(0);
 
-  const loc = useLocationAutocomplete();
-  const locWrapRef = useRef(null);
+  // Location autocomplete state
+  const [locQuery,       setLocQuery]       = useState('');
+  const [suggestions,    setSuggestions]    = useState([]);
+  const [locValidated,   setLocValidated]   = useState(false);
+  const [locSearching,   setLocSearching]   = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Sync location autocomplete value into formData
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, location: loc.query }));
-  }, [loc.query]);
+  const debounceRef  = useRef(null);
+  const blurTimerRef = useRef(null);
 
   useEffect(() => {
     setCharCount(formData.description.length);
   }, [formData.description]);
 
-  // Close suggestion dropdown on outside click
+  // Fetch suggestions from OpenStreetMap Nominatim
   useEffect(() => {
-    function handleClick(e) {
-      if (locWrapRef.current && !locWrapRef.current.contains(e.target)) {
-        loc.clear();
-        // restore whatever was typed if not validated
-      }
+    clearTimeout(debounceRef.current);
+    if (!locQuery || locQuery.trim().length < 3) {
+      setSuggestions([]);
+      return;
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [loc]);
+    if (locValidated) return; // already picked — don't re-search
+
+    debounceRef.current = setTimeout(async () => {
+      setLocSearching(true);
+      try {
+        const url =
+          `https://nominatim.openstreetmap.org/search` +
+          `?q=${encodeURIComponent(locQuery)}` +
+          `&format=json&addressdetails=1&limit=6`;
+        const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+
+        const results = data.map((item) => {
+          const a       = item.address || {};
+          const city    = a.city || a.town || a.village || a.municipality || a.county || '';
+          const prov    = a.state || a.province || '';
+          const country = a.country_code?.toUpperCase() || '';
+          const label   = [city, prov, country].filter(Boolean).join(', ')
+                          || item.display_name.split(',').slice(0, 3).join(',').trim();
+          return { id: item.place_id, label, full: item.display_name };
+        });
+
+        const seen   = new Set();
+        const unique = results.filter(r => {
+          if (seen.has(r.label)) return false;
+          seen.add(r.label);
+          return true;
+        });
+
+        setSuggestions(unique.slice(0, 5));
+        setShowSuggestions(true);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setLocSearching(false);
+      }
+    }, 380);
+  }, [locQuery, locValidated]);
+
+  function handleLocChange(e) {
+    const val = e.target.value;
+    setLocQuery(val);
+    setLocValidated(false);
+    setFormData(prev => ({ ...prev, location: val }));
+    if (errors.location) setErrors(prev => ({ ...prev, location: '' }));
+  }
+
+  function handleLocFocus() {
+    clearTimeout(blurTimerRef.current);
+    if (suggestions.length > 0) setShowSuggestions(true);
+  }
+
+  function handleLocBlur() {
+    // Delay hiding so a click on a suggestion has time to fire
+    blurTimerRef.current = setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  }
+
+  function pickSuggestion(label) {
+    clearTimeout(blurTimerRef.current); // cancel the blur hide
+    setLocQuery(label);
+    setLocValidated(true);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setFormData(prev => ({ ...prev, location: label }));
+    setErrors(prev => ({ ...prev, location: '' }));
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
-    if (name === 'location') {
-      loc.search(value);
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   }
 
@@ -167,16 +152,13 @@ export default function CreateProjectPage() {
 
   function validate() {
     const e = {};
-    if (!formData.title.trim())                   e.title = 'Project title is required.';
-    else if (formData.title.trim().length < 5)    e.title = 'Title must be at least 5 characters.';
-    else if (formData.title.trim().length > 200)  e.title = 'Title cannot exceed 200 characters.';
-
-    if (!formData.description.trim())             e.description = 'Description is required.';
-    else if (formData.description.trim().length < 30) e.description = 'Please provide at least 30 characters of detail.';
-
-    if (!loc.query.trim())      e.location = 'Location is required.';
-    else if (!loc.validated)    e.location = 'Please select an address from the suggestions.';
-
+    if (!formData.title.trim())                        e.title = 'Project title is required.';
+    else if (formData.title.trim().length < 5)         e.title = 'Title must be at least 5 characters.';
+    else if (formData.title.trim().length > 200)       e.title = 'Title cannot exceed 200 characters.';
+    if (!formData.description.trim())                  e.description = 'Description is required.';
+    else if (formData.description.trim().length < 30)  e.description = 'Please provide at least 30 characters of detail.';
+    if (!locQuery.trim())       e.location = 'Location is required.';
+    else if (!locValidated)     e.location = 'Please select a location from the suggestions.';
     const min = parseFloat(formData.budget_min);
     const max = parseFloat(formData.budget_max);
     if (!formData.budget_min)           e.budget_min = 'Minimum budget is required.';
@@ -201,7 +183,7 @@ export default function CreateProjectPage() {
       await addProject({
         title:       formData.title.trim(),
         description: formData.description.trim(),
-        location:    loc.query.trim(),
+        location:    locQuery.trim(),
         budget_min:  parseFloat(formData.budget_min),
         budget_max:  parseFloat(formData.budget_max),
       });
@@ -229,7 +211,7 @@ export default function CreateProjectPage() {
             </button>
             <button
               className="success-btn-secondary"
-              onClick={() => { setFormData(INITIAL_FORM); loc.clear(); setSubmitted(false); }}
+              onClick={() => { setFormData(INITIAL_FORM); setLocQuery(''); setLocValidated(false); setSubmitted(false); }}
             >
               Post Another Project
             </button>
@@ -286,8 +268,8 @@ export default function CreateProjectPage() {
             {errors.description && <span className="form-error">{errors.description}</span>}
           </div>
 
-          {/* Location — real-address autocomplete */}
-          <div className={`form-group ${errors.location ? 'form-group--error' : ''}`} ref={locWrapRef}>
+          {/* Location */}
+          <div className={`form-group ${errors.location ? 'form-group--error' : ''}`}>
             <label className="form-label" htmlFor="location">
               Location <span className="required">*</span>
             </label>
@@ -297,45 +279,40 @@ export default function CreateProjectPage() {
                 id="location" name="location" type="text"
                 className="form-input loc-input"
                 placeholder="Start typing a city or address…"
-                value={loc.query}
-                onChange={handleChange}
+                value={locQuery}
+                onChange={handleLocChange}
+                onFocus={handleLocFocus}
+                onBlur={handleLocBlur}
                 autoComplete="off"
                 disabled={isLoading}
               />
-              {loc.validated && (
-                <span className="loc-verified-badge" title="Address verified">✓</span>
-              )}
-              {loc.isSearching && <span className="loc-spinner" />}
+              {locValidated  && <span className="loc-verified-badge">✓</span>}
+              {locSearching  && <span className="loc-spinner" />}
             </div>
 
-            {/* Suggestions dropdown */}
-            {loc.suggestions.length > 0 && (
+            {showSuggestions && suggestions.length > 0 && (
               <ul className="loc-suggestions">
-                {loc.suggestions.map((s) => (
+                {suggestions.map((s) => (
                   <li
                     key={s.id}
                     className="loc-suggestion-item"
-                    onMouseDown={(e) => {
-                      e.preventDefault(); // prevent input blur before pick runs
-                      loc.pick(s.label);
-                      setErrors(prev => ({ ...prev, location: '' }));
-                    }}
+                    onClick={() => pickSuggestion(s.label)}
                   >
                     <span className="loc-suggestion-icon">📍</span>
                     <div>
                       <div className="loc-suggestion-label">{s.label}</div>
-                      <div className="loc-suggestion-full">{s.full.split(',').slice(0, 4).join(',')}</div>
+                      <div className="loc-suggestion-full">
+                        {s.full.split(',').slice(0, 4).join(',').trim()}
+                      </div>
                     </div>
                   </li>
                 ))}
-                <li className="loc-suggestions-footer">
-                  Powered by OpenStreetMap
-                </li>
+                <li className="loc-suggestions-footer">Powered by OpenStreetMap</li>
               </ul>
             )}
 
             <span className="form-hint">
-              {loc.validated
+              {locValidated
                 ? '✓ Address verified from OpenStreetMap'
                 : 'Type at least 3 characters to see real address suggestions'}
             </span>
@@ -406,11 +383,8 @@ export default function CreateProjectPage() {
                 : 'Your project description will appear here…'}
             </p>
             <div className="preview-meta">
-              {loc.query && (
-                <span>
-                  📍 {loc.query}
-                  {loc.validated && <span className="preview-verified"> ✓</span>}
-                </span>
+              {locQuery && (
+                <span>📍 {locQuery}{locValidated && <span className="preview-verified"> ✓</span>}</span>
               )}
               {formData.budget_min && formData.budget_max && (
                 <span>💰 {formatCurrency(formData.budget_min)} – {formatCurrency(formData.budget_max)}</span>
