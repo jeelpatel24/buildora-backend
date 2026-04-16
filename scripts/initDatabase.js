@@ -110,13 +110,27 @@ const initDatabase = async () => {
     await pool.query('CREATE INDEX idx_proposals_contractor ON proposals(contractor_id)');
     console.log('✓ Created indexes');
 
-    // Seed the default admin user so the admin panel is accessible immediately
-    const adminPassword = await bcrypt.hash('admin123', 10);
+    // Seed demo users so the quick-login buttons on the login page work immediately
+    const adminPassword      = await bcrypt.hash('admin123', 10);
+    const demoPassword       = await bcrypt.hash('demo123',  10);
+
     await pool.query(`
       INSERT INTO users (name, email, password_hash, role, is_verified)
       VALUES ('Admin User', 'admin@buildora.com', $1, 'Admin', TRUE)
     `, [adminPassword]);
-    console.log('✓ Created admin user  →  admin@buildora.com / admin123');
+    console.log('✓ Created admin user       →  admin@buildora.com / admin123');
+
+    await pool.query(`
+      INSERT INTO users (name, email, password_hash, role, is_verified)
+      VALUES ('Alex Homeowner', 'homeowner@demo.com', $1, 'Homeowner', TRUE)
+    `, [demoPassword]);
+    console.log('✓ Created demo homeowner   →  homeowner@demo.com / demo123');
+
+    await pool.query(`
+      INSERT INTO users (name, email, password_hash, role, is_verified)
+      VALUES ('Sam Contractor', 'contractor@demo.com', $1, 'Contractor', TRUE)
+    `, [demoPassword]);
+    console.log('✓ Created demo contractor  →  contractor@demo.com / demo123');
 
     console.log('\n✅ Database initialisation completed successfully!\n');
   } catch (error) {
