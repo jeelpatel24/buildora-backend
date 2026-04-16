@@ -2,52 +2,56 @@
  * ProjectDetailPage.jsx
  * -----------------------------------------------
  * Full project detail view with inline proposal submission form.
- * Demonstrates: useEffect for loading derived data, useState for
- * modal/form toggle, controlled form for proposal submission,
- * conditional rendering based on role & project state.
+ *
+ * Sprint 3 changes:
+ *   - Fetches the project from GET /api/projects/:id on mount.
+ *   - Homeowners fetch proposals for their project via GET /api/proposals/project/:id.
+ *   - Contractor "already submitted" check uses DataContext proposals
+ *     (already loaded for contractors by DataProvider).
+ *   - Submit and accept actions call the API via DataContext mutation functions.
  */
 
 import { useState, useEffect } from 'react';
 import { useAuth }             from '../context/AuthContext';
 import { useData, useNav }     from '../context/AppContext';
+import { getProjectById }      from '../api/projects';
+import { getProjectProposals } from '../api/proposals';
 import ProposalCard            from '../components/ProposalCard';
 import AlertMessage            from '../components/AlertMessage';
 import LoadingSpinner          from '../components/LoadingSpinner';
 import './ProjectDetailPage.css';
 
 function formatCurrency(v) {
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v);
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency', currency: 'CAD', maximumFractionDigits: 0,
+  }).format(v);
 }
 
 function formatDate(iso) {
-  return new Intl.DateTimeFormat('en-CA', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-CA', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  }).format(new Date(iso));
 }
 
-// Inline proposal submission form — controlled
-function ProposalForm({ projectId, contractorId, contractorName, onSubmit, onCancel }) {
-  const [formData, setFormData]   = useState({ proposed_price: '', message: '' });
-  const [errors,   setErrors]     = useState({});
-  const [success,  setSuccess]    = useState(false);
+// ── Inline proposal form ───────────────────────────────────────────────────────
+
+function ProposalForm({ onSubmit, onCancel, isLoading }) {
+  const [formData, setFormData] = useState({ proposed_price: '', message: '' });
+  const [errors,   setErrors]   = useState({});
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   }
 
   function validate() {
     const e = {};
     const price = parseFloat(formData.proposed_price);
-    if (!formData.proposed_price) {
-      e.proposed_price = 'Proposed price is required.';
-    } else if (isNaN(price) || price <= 0) {
-      e.proposed_price = 'Please enter a valid price greater than 0.';
-    }
-    if (!formData.message.trim()) {
-      e.message = 'Please include a message to the homeowner.';
-    } else if (formData.message.trim().length < 20) {
-      e.message = 'Message should be at least 20 characters.';
-    }
+    if (!formData.proposed_price)           e.proposed_price = 'Proposed price is required.';
+    else if (isNaN(price) || price <= 0)    e.proposed_price = 'Please enter a valid price greater than 0.';
+    if (!formData.message.trim())           e.message = 'Please include a message to the homeowner.';
+    else if (formData.message.trim().length < 20) e.message = 'Message should be at least 20 characters.';
     return e;
   }
 
@@ -59,70 +63,51 @@ function ProposalForm({ projectId, contractorId, contractorName, onSubmit, onCan
       return;
     }
     onSubmit({
-      project_id:     projectId,
-      contractor_id:  contractorId,
-      contractor_name: contractorName,
       proposed_price: parseFloat(formData.proposed_price),
       message:        formData.message.trim(),
     });
-    setSuccess(true);
-  }
-
-  if (success) {
-    return (
-      <AlertMessage
-        type="success"
-        message="Your proposal has been submitted successfully! The homeowner will review it shortly."
-      />
-    );
   }
 
   return (
     <form className="proposal-form" onSubmit={handleSubmit} noValidate>
       <h3 className="proposal-form-title">Submit Your Proposal</h3>
 
-      {/* Price */}
       <div className={`form-group ${errors.proposed_price ? 'form-group--error' : ''}`}>
         <label className="form-label" htmlFor="proposed_price">Your Proposed Price (CAD)</label>
         <div className="price-input-wrap">
           <span className="price-prefix">$</span>
           <input
-            id="proposed_price"
-            name="proposed_price"
-            type="number"
-            min="1"
-            step="100"
-            className="form-input price-input"
+            id="proposed_price" name="proposed_price" type="number"
+            min="1" step="100" className="form-input price-input"
             placeholder="e.g. 18500"
-            value={formData.proposed_price}
-            onChange={handleChange}
+            value={formData.proposed_price} onChange={handleChange} disabled={isLoading}
           />
         </div>
         {errors.proposed_price && <span className="form-error">{errors.proposed_price}</span>}
       </div>
 
-      {/* Message */}
       <div className={`form-group ${errors.message ? 'form-group--error' : ''}`}>
         <label className="form-label" htmlFor="proposal-message">
           Cover Message
           <span className="form-hint"> ({formData.message.length}/500)</span>
         </label>
         <textarea
-          id="proposal-message"
-          name="message"
-          className="form-input"
-          rows="5"
-          placeholder="Introduce yourself, describe your experience, and explain why you're the right fit for this project…"
-          value={formData.message}
-          onChange={handleChange}
-          maxLength={500}
+          id="proposal-message" name="message"
+          className="form-input" rows="5"
+          placeholder="Introduce yourself, describe your experience, and explain why you're the right fit…"
+          value={formData.message} onChange={handleChange}
+          maxLength={500} disabled={isLoading}
         />
         {errors.message && <span className="form-error">{errors.message}</span>}
       </div>
 
       <div className="proposal-form-actions">
-        <button type="submit" className="btn-submit-proposal">Submit Proposal</button>
-        <button type="button" className="btn-cancel-proposal" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="btn-submit-proposal" disabled={isLoading}>
+          {isLoading ? 'Submitting…' : 'Submit Proposal'}
+        </button>
+        <button type="button" className="btn-cancel-proposal" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </button>
       </div>
     </form>
   );
@@ -132,46 +117,94 @@ function ProposalForm({ projectId, contractorId, contractorName, onSubmit, onCan
 
 export default function ProjectDetailPage() {
   const { currentUser, isHomeowner, isContractor } = useAuth();
-  const { projects, proposals, addProposal, acceptProposal } = useData();
-  const { pageParams, navigate } = useNav();
+  const { proposals, addProposal, acceptProposal } = useData();
+  const { pageParams, navigate }                   = useNav();
 
   const [project,          setProject]          = useState(null);
   const [projectProposals, setProjectProposals] = useState([]);
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [hasSubmitted,     setHasSubmitted]     = useState(false);
   const [successMsg,       setSuccessMsg]       = useState('');
+  const [errorMsg,         setErrorMsg]         = useState('');
   const [isLoading,        setIsLoading]        = useState(true);
+  const [isMutating,       setIsMutating]       = useState(false);
 
-  // Load project and its proposals from context
+  const projectId = pageParams.projectId;
+
+  // ── Fetch project (and proposals if homeowner) on mount ────────────────────
   useEffect(() => {
-    const found = projects.find((p) => p.project_id === pageParams.projectId);
-    setProject(found || null);
+    if (!projectId) return;
 
-    if (found) {
-      setProjectProposals(proposals.filter((p) => p.project_id === found.project_id));
-      // Check if current contractor already submitted
-      if (isContractor) {
-        const submitted = proposals.some(
-          (p) => p.project_id === found.project_id && p.contractor_id === currentUser.user_id
-        );
-        setHasSubmitted(submitted);
+    async function fetchProjectData() {
+      setIsLoading(true);
+      setErrorMsg('');
+      try {
+        const projData = await getProjectById(projectId);
+        setProject(projData.project);
+
+        if (isHomeowner) {
+          // Homeowners see all proposals for their project
+          try {
+            const propData = await getProjectProposals(projectId);
+            setProjectProposals(propData.proposals || []);
+          } catch {
+            // Not this homeowner's project — proposals will stay empty
+          }
+        }
+
+        if (isContractor) {
+          // Check if this contractor already has a proposal in DataContext
+          const already = proposals.some(
+            p => p.project_id === projectId && p.contractor_id === currentUser.user_id
+          );
+          setHasSubmitted(already);
+        }
+      } catch (err) {
+        setErrorMsg(err.response?.data?.error || 'Failed to load project.');
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, [projects, proposals, pageParams.projectId, isContractor, currentUser]);
+    fetchProjectData();
+  }, [projectId]);
 
-  function handleSubmitProposal(proposalData) {
-    addProposal(proposalData);
-    setHasSubmitted(true);
-    setShowProposalForm(false);
-    setSuccessMsg('Your proposal was submitted! You can view it in "My Proposals".');
+  async function handleSubmitProposal(proposalData) {
+    setIsMutating(true);
+    setErrorMsg('');
+    try {
+      await addProposal({ project_id: projectId, ...proposalData });
+      setHasSubmitted(true);
+      setShowProposalForm(false);
+      setSuccessMsg('Your proposal was submitted! You can track it in "My Proposals".');
+    } catch (err) {
+      setErrorMsg(err.response?.data?.error || 'Failed to submit proposal. Please try again.');
+    } finally {
+      setIsMutating(false);
+    }
   }
 
-  function handleAcceptProposal(proposal) {
-    acceptProposal(proposal.proposal_id, proposal.project_id);
-    setSuccessMsg(`Proposal from ${proposal.contractor_name} accepted! Project is now closed to new bids.`);
+  async function handleAcceptProposal(proposal) {
+    setIsMutating(true);
+    setErrorMsg('');
+    try {
+      await acceptProposal(proposal.proposal_id, proposal.project_id);
+      // Update local proposals display
+      setProjectProposals(prev => prev.map(p => {
+        if (p.project_id === proposal.project_id) {
+          return p.proposal_id === proposal.proposal_id
+            ? { ...p, status: 'Accepted' }
+            : { ...p, status: 'Rejected' };
+        }
+        return p;
+      }));
+      setProject(prev => prev ? { ...prev, status: 'Accepted' } : prev);
+      setSuccessMsg(`Proposal from ${proposal.contractor_name} accepted! Project is now closed to new bids.`);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.error || 'Failed to accept proposal. Please try again.');
+    } finally {
+      setIsMutating(false);
+    }
   }
 
   if (isLoading) return <LoadingSpinner message="Loading project…" />;
@@ -182,6 +215,7 @@ export default function ProjectDetailPage() {
         <div className="empty-state">
           <div className="empty-icon">🔎</div>
           <h3>Project not found</h3>
+          {errorMsg && <p style={{ color: 'var(--clr-danger)' }}>{errorMsg}</p>}
           <button className="pd-back-btn" onClick={() => navigate('browse')}>← Back to Projects</button>
         </div>
       </div>
@@ -196,7 +230,6 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="page-wrapper">
-      {/* Back button */}
       <button className="pd-back-btn" onClick={() => navigate('browse')}>
         ← Back to Projects
       </button>
@@ -204,7 +237,6 @@ export default function ProjectDetailPage() {
       <div className="pd-layout">
         {/* ── Left: Project info ── */}
         <div className="pd-main">
-          {/* Header */}
           <div className="pd-header">
             <div className="pd-header-top">
               <span className={`badge badge-${project.status.toLowerCase()}`}>{project.status}</span>
@@ -214,7 +246,6 @@ export default function ProjectDetailPage() {
             <p className="pd-homeowner">by {project.homeowner_name}</p>
           </div>
 
-          {/* Meta strip */}
           <div className="pd-meta-strip">
             <div className="pd-meta-item">
               <span className="pd-meta-label">📍 Location</span>
@@ -226,46 +257,38 @@ export default function ProjectDetailPage() {
                 {formatCurrency(project.budget_min)} – {formatCurrency(project.budget_max)}
               </span>
             </div>
-            <div className="pd-meta-item">
-              <span className="pd-meta-label">📋 Proposals</span>
-              <span className="pd-meta-value">{project.proposal_count}</span>
-            </div>
           </div>
 
-          {/* Description */}
           <div className="pd-section">
             <h2 className="pd-section-title">Project Description</h2>
             <p className="pd-description">{project.description}</p>
           </div>
 
-          {/* Success message */}
           {successMsg && (
             <AlertMessage type="success" message={successMsg} onClose={() => setSuccessMsg('')} />
           )}
+          {errorMsg && !isLoading && (
+            <AlertMessage type="error" message={errorMsg} onClose={() => setErrorMsg('')} />
+          )}
 
-          {/* Contractor: proposal form or status */}
+          {/* Contractor: proposal section */}
           {isContractor && (
             <div className="pd-section">
               {canSubmitProposal && !showProposalForm && (
-                <button
-                  className="pd-submit-proposal-btn"
-                  onClick={() => setShowProposalForm(true)}
-                >
+                <button className="pd-submit-proposal-btn" onClick={() => setShowProposalForm(true)}>
                   📝 Submit a Proposal
                 </button>
               )}
 
               {canSubmitProposal && showProposalForm && (
                 <ProposalForm
-                  projectId={project.project_id}
-                  contractorId={currentUser.user_id}
-                  contractorName={currentUser.name}
                   onSubmit={handleSubmitProposal}
                   onCancel={() => setShowProposalForm(false)}
+                  isLoading={isMutating}
                 />
               )}
 
-              {hasSubmitted && !successMsg && (
+              {hasSubmitted && (
                 <AlertMessage
                   type="info"
                   message="You have already submitted a proposal for this project."
@@ -289,7 +312,7 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
-        {/* ── Right: Proposals (homeowner view) ── */}
+        {/* ── Right: Proposals panel (homeowner only) ── */}
         {isHomeowner && project.homeowner_id === currentUser.user_id && (
           <aside className="pd-proposals-panel">
             <h2 className="pd-section-title">
@@ -305,7 +328,7 @@ export default function ProjectDetailPage() {
               </div>
             ) : (
               <div className="proposals-list">
-                {projectProposals.map((proposal) => (
+                {projectProposals.map(proposal => (
                   <ProposalCard
                     key={proposal.proposal_id}
                     proposal={proposal}

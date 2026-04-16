@@ -1,26 +1,23 @@
 /*
  * CreateProjectPage.jsx
  * -----------------------------------------------
- * Multi-field form for creating a new renovation project.
- * Demonstrates: controlled inputs, complex validation, useState,
- * range input, form submission, success state, useEffect cleanup.
+ * Multi-field form for posting a new renovation project.
+ *
+ * Sprint 3 changes:
+ *   - addProject() is now async (calls POST /api/projects via DataContext).
+ *   - API errors are extracted from error.response.data.error.
+ *   - Loading state disables the submit button while the request is in flight.
  */
 
 import { useState, useEffect } from 'react';
-import { useAuth }             from '../context/AuthContext';
 import { useData, useNav }     from '../context/AppContext';
 import AlertMessage            from '../components/AlertMessage';
 import './CreateProjectPage.css';
 
 const INITIAL_FORM = {
-  title:       '',
-  description: '',
-  location:    '',
-  budget_min:  '',
-  budget_max:  '',
+  title: '', description: '', location: '', budget_min: '', budget_max: '',
 };
 
-// Budget slider labels
 const BUDGET_PRESETS = [
   { label: '< $5K',   min: 1000,  max: 5000  },
   { label: '$5–15K',  min: 5000,  max: 15000 },
@@ -31,111 +28,88 @@ const BUDGET_PRESETS = [
 
 function formatCurrency(v) {
   if (!v) return '—';
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v);
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency', currency: 'CAD', maximumFractionDigits: 0,
+  }).format(v);
 }
 
 export default function CreateProjectPage() {
-  const { currentUser } = useAuth();
-  const { addProject }  = useData();
-  const { navigate }    = useNav();
+  const { addProject } = useData();
+  const { navigate }   = useNav();
 
-  const [formData,   setFormData]   = useState(INITIAL_FORM);
-  const [errors,     setErrors]     = useState({});
+  const [formData,    setFormData]    = useState(INITIAL_FORM);
+  const [errors,      setErrors]      = useState({});
   const [submitError, setSubmitError] = useState('');
-  const [submitted,  setSubmitted]  = useState(false);
-  const [charCount,  setCharCount]  = useState(0);
+  const [submitted,   setSubmitted]   = useState(false);
+  const [isLoading,   setIsLoading]   = useState(false);
+  const [charCount,   setCharCount]   = useState(0);
 
-  // useEffect to keep desc character count in sync — demonstrates side effect
   useEffect(() => {
     setCharCount(formData.description.length);
   }, [formData.description]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   }
 
   function applyBudgetPreset(preset) {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       budget_min: String(preset.min),
       budget_max: String(preset.max),
     }));
-    setErrors((prev) => ({ ...prev, budget_min: '', budget_max: '' }));
+    setErrors(prev => ({ ...prev, budget_min: '', budget_max: '' }));
   }
 
   function validate() {
     const e = {};
-
-    if (!formData.title.trim()) {
-      e.title = 'Project title is required.';
-    } else if (formData.title.trim().length < 5) {
-      e.title = 'Title must be at least 5 characters.';
-    } else if (formData.title.trim().length > 200) {
-      e.title = 'Title cannot exceed 200 characters.';
-    }
-
-    if (!formData.description.trim()) {
-      e.description = 'Description is required.';
-    } else if (formData.description.trim().length < 30) {
-      e.description = 'Please provide at least 30 characters of detail.';
-    }
-
-    if (!formData.location.trim()) {
-      e.location = 'Location is required (e.g. Toronto, ON).';
-    }
+    if (!formData.title.trim())          e.title = 'Project title is required.';
+    else if (formData.title.trim().length < 5)   e.title = 'Title must be at least 5 characters.';
+    else if (formData.title.trim().length > 200)  e.title = 'Title cannot exceed 200 characters.';
+    if (!formData.description.trim())    e.description = 'Description is required.';
+    else if (formData.description.trim().length < 30) e.description = 'Please provide at least 30 characters of detail.';
+    if (!formData.location.trim())       e.location = 'Location is required (e.g. Toronto, ON).';
 
     const min = parseFloat(formData.budget_min);
     const max = parseFloat(formData.budget_max);
-
-    if (!formData.budget_min) {
-      e.budget_min = 'Minimum budget is required.';
-    } else if (isNaN(min) || min <= 0) {
-      e.budget_min = 'Enter a valid minimum budget.';
-    }
-
-    if (!formData.budget_max) {
-      e.budget_max = 'Maximum budget is required.';
-    } else if (isNaN(max) || max <= 0) {
-      e.budget_max = 'Enter a valid maximum budget.';
-    } else if (!isNaN(min) && max <= min) {
-      e.budget_max = 'Maximum budget must be greater than minimum.';
-    }
-
+    if (!formData.budget_min)            e.budget_min = 'Minimum budget is required.';
+    else if (isNaN(min) || min <= 0)     e.budget_min = 'Enter a valid minimum budget.';
+    if (!formData.budget_max)            e.budget_max = 'Maximum budget is required.';
+    else if (isNaN(max) || max <= 0)     e.budget_max = 'Enter a valid maximum budget.';
+    else if (!isNaN(min) && max <= min)  e.budget_max = 'Maximum budget must be greater than minimum.';
     return e;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setSubmitError('');
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      // Scroll to first error
-      const firstErrorEl = document.querySelector('.form-group--error');
-      firstErrorEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.querySelector('.form-group--error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
+    setIsLoading(true);
     try {
-      addProject({
-        homeowner_id:   currentUser.user_id,
-        homeowner_name: currentUser.name,
-        title:          formData.title.trim(),
-        description:    formData.description.trim(),
-        location:       formData.location.trim(),
-        budget_min:     parseFloat(formData.budget_min),
-        budget_max:     parseFloat(formData.budget_max),
+      await addProject({
+        title:       formData.title.trim(),
+        description: formData.description.trim(),
+        location:    formData.location.trim(),
+        budget_min:  parseFloat(formData.budget_min),
+        budget_max:  parseFloat(formData.budget_max),
       });
       setSubmitted(true);
-    } catch {
-      setSubmitError('Something went wrong. Please try again.');
+    } catch (err) {
+      setSubmitError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   }
 
-  // Success screen
   if (submitted) {
     return (
       <div className="page-wrapper">
@@ -143,8 +117,8 @@ export default function CreateProjectPage() {
           <div className="success-icon">🎉</div>
           <h2 className="success-title">Project Posted!</h2>
           <p className="success-body">
-            Your renovation project <strong>"{formData.title}"</strong> is now live and visible to
-            verified contractors.
+            Your renovation project <strong>"{formData.title}"</strong> is now live
+            and visible to verified contractors.
           </p>
           <div className="success-actions">
             <button className="success-btn-primary" onClick={() => navigate('my-projects')}>
@@ -171,7 +145,9 @@ export default function CreateProjectPage() {
         </p>
       </div>
 
-      {submitError && <AlertMessage type="error" message={submitError} onClose={() => setSubmitError('')} />}
+      {submitError && (
+        <AlertMessage type="error" message={submitError} onClose={() => setSubmitError('')} />
+      )}
 
       <div className="create-layout">
         <form className="create-form" onSubmit={handleSubmit} noValidate>
@@ -181,14 +157,10 @@ export default function CreateProjectPage() {
               Project Title <span className="required">*</span>
             </label>
             <input
-              id="title"
-              name="title"
-              type="text"
-              className="form-input"
-              placeholder="e.g. Full Kitchen Renovation"
-              value={formData.title}
-              onChange={handleChange}
-              maxLength={200}
+              id="title" name="title" type="text"
+              className="form-input" placeholder="e.g. Full Kitchen Renovation"
+              value={formData.title} onChange={handleChange} maxLength={200}
+              disabled={isLoading}
             />
             <span className="form-hint">{formData.title.length}/200</span>
             {errors.title && <span className="form-error">{errors.title}</span>}
@@ -200,14 +172,11 @@ export default function CreateProjectPage() {
               Description <span className="required">*</span>
             </label>
             <textarea
-              id="description"
-              name="description"
-              className="form-input"
-              rows="6"
-              placeholder="Describe the scope of work, materials, timeline expectations, and any specific requirements…"
-              value={formData.description}
-              onChange={handleChange}
-              maxLength={2000}
+              id="description" name="description"
+              className="form-input" rows="6"
+              placeholder="Describe the scope of work, materials, timeline, and any specific requirements…"
+              value={formData.description} onChange={handleChange} maxLength={2000}
+              disabled={isLoading}
             />
             <span className="form-hint">{charCount}/2000 characters</span>
             {errors.description && <span className="form-error">{errors.description}</span>}
@@ -219,13 +188,10 @@ export default function CreateProjectPage() {
               Location <span className="required">*</span>
             </label>
             <input
-              id="location"
-              name="location"
-              type="text"
-              className="form-input"
-              placeholder="e.g. Toronto, ON"
-              value={formData.location}
-              onChange={handleChange}
+              id="location" name="location" type="text"
+              className="form-input" placeholder="e.g. Toronto, ON"
+              value={formData.location} onChange={handleChange}
+              disabled={isLoading}
             />
             {errors.location && <span className="form-error">{errors.location}</span>}
           </div>
@@ -235,70 +201,54 @@ export default function CreateProjectPage() {
             <label className="form-label">
               Budget Range (CAD) <span className="required">*</span>
             </label>
-            {/* Quick preset buttons */}
             <div className="budget-presets">
-              {BUDGET_PRESETS.map((p) => (
+              {BUDGET_PRESETS.map(p => (
                 <button
-                  key={p.label}
-                  type="button"
+                  key={p.label} type="button"
                   className={`budget-preset ${
                     formData.budget_min === String(p.min) && formData.budget_max === String(p.max)
-                      ? 'budget-preset--active'
-                      : ''
+                      ? 'budget-preset--active' : ''
                   }`}
                   onClick={() => applyBudgetPreset(p)}
+                  disabled={isLoading}
                 >
                   {p.label}
                 </button>
               ))}
             </div>
-
             <div className="form-row">
               <div className={`form-group ${errors.budget_min ? 'form-group--error' : ''}`}>
                 <label className="form-label" htmlFor="budget_min">Minimum ($)</label>
                 <input
-                  id="budget_min"
-                  name="budget_min"
-                  type="number"
-                  min="0"
-                  step="500"
-                  className="form-input"
-                  placeholder="e.g. 10000"
-                  value={formData.budget_min}
-                  onChange={handleChange}
+                  id="budget_min" name="budget_min" type="number"
+                  min="0" step="500" className="form-input" placeholder="e.g. 10000"
+                  value={formData.budget_min} onChange={handleChange} disabled={isLoading}
                 />
                 {errors.budget_min && <span className="form-error">{errors.budget_min}</span>}
               </div>
               <div className={`form-group ${errors.budget_max ? 'form-group--error' : ''}`}>
                 <label className="form-label" htmlFor="budget_max">Maximum ($)</label>
                 <input
-                  id="budget_max"
-                  name="budget_max"
-                  type="number"
-                  min="0"
-                  step="500"
-                  className="form-input"
-                  placeholder="e.g. 20000"
-                  value={formData.budget_max}
-                  onChange={handleChange}
+                  id="budget_max" name="budget_max" type="number"
+                  min="0" step="500" className="form-input" placeholder="e.g. 20000"
+                  value={formData.budget_max} onChange={handleChange} disabled={isLoading}
                 />
                 {errors.budget_max && <span className="form-error">{errors.budget_max}</span>}
               </div>
             </div>
           </div>
 
-          {/* Submit */}
           <div className="create-form-footer">
-            <button type="button" className="create-cancel-btn" onClick={() => navigate('my-projects')}>
+            <button type="button" className="create-cancel-btn" onClick={() => navigate('my-projects')} disabled={isLoading}>
               Cancel
             </button>
-            <button type="submit" className="create-submit-btn">
-              Post Project →
+            <button type="submit" className="create-submit-btn" disabled={isLoading}>
+              {isLoading ? 'Posting…' : 'Post Project →'}
             </button>
           </div>
         </form>
 
-        {/* Live preview sidebar */}
+        {/* Live preview */}
         <div className="create-preview">
           <div className="preview-label">Live Preview</div>
           <div className="preview-card">

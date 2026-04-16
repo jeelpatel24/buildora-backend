@@ -2,58 +2,57 @@
  * BrowseProjectsPage.jsx
  * -----------------------------------------------
  * Lists all open projects with live search and filter.
- * Demonstrates: useState for filter/search state,
- * useEffect for derived filtered list, controlled inputs,
- * conditional rendering, array methods (.filter, .sort).
+ *
+ * Sprint 3 changes:
+ *   - Projects now come from DataContext, which fetches from the real API.
+ *   - Added a loading state and error display for the initial data fetch.
+ *   - Logic for filtering/sorting is unchanged (demonstrates array methods).
  */
 
-import { useState, useEffect } from 'react';
-import { useData, useNav }     from '../context/AppContext';
-import { useAuth }             from '../context/AuthContext';
-import ProjectCard             from '../components/ProjectCard';
+import { useState, useEffect }    from 'react';
+import { useData, useNav }        from '../context/AppContext';
+import { useAuth }                from '../context/AuthContext';
+import ProjectCard                from '../components/ProjectCard';
+import LoadingSpinner             from '../components/LoadingSpinner';
+import AlertMessage               from '../components/AlertMessage';
 import './BrowseProjectsPage.css';
 
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest First' },
-  { value: 'oldest',     label: 'Oldest First' },
-  { value: 'budget-asc', label: 'Budget: Low to High' },
-  { value: 'budget-desc',label: 'Budget: High to Low' },
+  { value: 'newest',      label: 'Newest First' },
+  { value: 'oldest',      label: 'Oldest First' },
+  { value: 'budget-asc',  label: 'Budget: Low to High' },
+  { value: 'budget-desc', label: 'Budget: High to Low' },
 ];
 
 const STATUS_FILTERS = ['All', 'Open', 'Accepted', 'Closed'];
 
 export default function BrowseProjectsPage() {
-  const { projects }           = useData();
-  const { navigate }           = useNav();
-  const { currentUser, isContractor } = useAuth();
+  const { projects, isLoading, dataError } = useData();
+  const { navigate }                       = useNav();
+  const { isContractor, currentUser }      = useAuth();
 
-  // Filter & search state — all controlled inputs
   const [search,       setSearch]       = useState('');
-  const [statusFilter, setStatusFilter] = useState('Open');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy,       setSortBy]       = useState('newest');
   const [filteredList, setFilteredList] = useState([]);
 
-  // useEffect: recalculate filtered list whenever any filter changes
+  // Recalculate filtered list whenever projects or filters change
   useEffect(() => {
     let result = [...projects];
 
-    // 1. Status filter
     if (statusFilter !== 'All') {
-      result = result.filter((p) => p.status === statusFilter);
+      result = result.filter(p => p.status === statusFilter);
     }
 
-    // 2. Search filter (title, description, location)
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.location.toLowerCase().includes(q)
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.location.toLowerCase().includes(q)
       );
     }
 
-    // 3. Sort
     result.sort((a, b) => {
       switch (sortBy) {
         case 'newest':      return new Date(b.created_at) - new Date(a.created_at);
@@ -71,18 +70,18 @@ export default function BrowseProjectsPage() {
     navigate('project-detail', { projectId: project.project_id });
   }
 
-  // Clear all filters
   function handleReset() {
     setSearch('');
-    setStatusFilter('Open');
+    setStatusFilter('All');
     setSortBy('newest');
   }
 
-  const hasFilters = search || statusFilter !== 'Open' || sortBy !== 'newest';
+  const hasFilters = search || statusFilter !== 'All' || sortBy !== 'newest';
+
+  if (isLoading) return <LoadingSpinner message="Loading projects…" />;
 
   return (
     <div className="page-wrapper">
-      {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Browse Projects</h1>
         <p className="page-subtitle">
@@ -91,9 +90,12 @@ export default function BrowseProjectsPage() {
         </p>
       </div>
 
+      {dataError && (
+        <AlertMessage type="error" message={dataError} />
+      )}
+
       {/* Filter bar */}
       <div className="filter-bar">
-        {/* Search input — controlled */}
         <div className="filter-search">
           <span className="filter-search-icon">🔍</span>
           <input
@@ -101,16 +103,15 @@ export default function BrowseProjectsPage() {
             className="filter-search-input"
             placeholder="Search by title, description, or location…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
           />
           {search && (
             <button className="filter-clear-btn" onClick={() => setSearch('')}>×</button>
           )}
         </div>
 
-        {/* Status tabs — controlled */}
         <div className="filter-tabs">
-          {STATUS_FILTERS.map((s) => (
+          {STATUS_FILTERS.map(s => (
             <button
               key={s}
               className={`filter-tab ${statusFilter === s ? 'filter-tab--active' : ''}`}
@@ -121,47 +122,45 @@ export default function BrowseProjectsPage() {
           ))}
         </div>
 
-        {/* Sort select — controlled */}
         <select
           className="filter-sort"
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
+          onChange={e => setSortBy(e.target.value)}
         >
-          {SORT_OPTIONS.map((o) => (
+          {SORT_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
 
-        {/* Reset */}
         {hasFilters && (
-          <button className="filter-reset-btn" onClick={handleReset}>
-            Reset filters
-          </button>
+          <button className="filter-reset-btn" onClick={handleReset}>Reset filters</button>
         )}
       </div>
 
-      {/* Contractor: submit proposal reminder */}
       {isContractor && currentUser?.is_verified && (
         <div className="contractor-tip">
           💡 Click <strong>View Details</strong> on any open project to submit a proposal.
         </div>
       )}
 
-      {/* Project grid */}
       {filteredList.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🔎</div>
           <h3>No projects found</h3>
           <p>Try adjusting your filters or search term.</p>
           {hasFilters && (
-            <button className="action-btn action-btn--primary" style={{ marginTop: 16 }} onClick={handleReset}>
+            <button
+              className="action-btn action-btn--primary"
+              style={{ marginTop: 16 }}
+              onClick={handleReset}
+            >
               Clear Filters
             </button>
           )}
         </div>
       ) : (
         <div className="grid-cards">
-          {filteredList.map((project) => (
+          {filteredList.map(project => (
             <ProjectCard
               key={project.project_id}
               project={project}

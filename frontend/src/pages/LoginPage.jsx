@@ -2,17 +2,21 @@
  * LoginPage.jsx
  * -----------------------------------------------
  * Login form page.
- * Demonstrates: controlled form inputs, useState for form state,
- * form validation, error handling, event handlers.
+ *
+ * Sprint 3 changes:
+ *   - login() is now async (it calls the real API).
+ *   - API error messages come from error.response.data.error
+ *     and fall back to the generic error string.
+ *   - Demo credential pills are kept so the instructor can
+ *     quickly switch between roles without remembering passwords.
  */
 
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNav }  from '../context/AppContext';
+import { useAuth }  from '../context/AuthContext';
+import { useNav }   from '../context/AppContext';
 import AlertMessage from '../components/AlertMessage';
 import './AuthPage.css';
 
-// Demo credentials displayed to help the grader test the app
 const DEMO_ACCOUNTS = [
   { role: 'Homeowner',  email: 'homeowner@demo.com', password: 'demo123' },
   { role: 'Contractor', email: 'contractor@demo.com', password: 'demo123' },
@@ -20,37 +24,29 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function LoginPage() {
-  const { login }   = useAuth();
+  const { login }    = useAuth();
   const { navigate } = useNav();
 
-  // Controlled form state — every input is driven by React state
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [errors,   setErrors]   = useState({});
-  const [apiError, setApiError] = useState('');
+  const [formData,  setFormData]  = useState({ email: '', password: '' });
+  const [errors,    setErrors]    = useState({});
+  const [apiError,  setApiError]  = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Generic change handler — works for all inputs via `name` attribute
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field-level error on change
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   }
 
-  // Client-side validation before submit
   function validate() {
-    const newErrors = {};
+    const errs = {};
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required.';
+      errs.email = 'Email is required.';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address.';
+      errs.email = 'Please enter a valid email address.';
     }
-    if (!formData.password) {
-      newErrors.password = 'Password is required.';
-    }
-    return newErrors;
+    if (!formData.password) errs.password = 'Password is required.';
+    return errs;
   }
 
   async function handleSubmit(e) {
@@ -65,17 +61,16 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const user = login(formData.email, formData.password);
-      // Navigate to role-specific dashboard
+      await login(formData.email, formData.password);
       navigate('dashboard');
     } catch (err) {
-      setApiError(err.message);
+      // API returns { error: '...' } on failure
+      setApiError(err.response?.data?.error || err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   }
 
-  // Quick-fill from demo card
   function fillDemo(account) {
     setFormData({ email: account.email, password: account.password });
     setErrors({});
@@ -96,7 +91,7 @@ export default function LoginPage() {
         <div className="demo-accounts">
           <p className="demo-label">Quick demo login:</p>
           <div className="demo-pills">
-            {DEMO_ACCOUNTS.map((acc) => (
+            {DEMO_ACCOUNTS.map(acc => (
               <button
                 key={acc.role}
                 className="demo-pill"
@@ -109,22 +104,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Error alert */}
         {apiError && (
-          <AlertMessage
-            type="error"
-            message={apiError}
-            onClose={() => setApiError('')}
-          />
+          <AlertMessage type="error" message={apiError} onClose={() => setApiError('')} />
         )}
 
-        {/* Login form */}
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          {/* Email */}
           <div className={`form-group ${errors.email ? 'form-group--error' : ''}`}>
-            <label className="form-label" htmlFor="email">
-              Email Address
-            </label>
+            <label className="form-label" htmlFor="email">Email Address</label>
             <input
               id="email"
               name="email"
@@ -139,11 +125,8 @@ export default function LoginPage() {
             {errors.email && <span className="form-error">{errors.email}</span>}
           </div>
 
-          {/* Password */}
           <div className={`form-group ${errors.password ? 'form-group--error' : ''}`}>
-            <label className="form-label" htmlFor="password">
-              Password
-            </label>
+            <label className="form-label" htmlFor="password">Password</label>
             <input
               id="password"
               name="password"
@@ -158,17 +141,11 @@ export default function LoginPage() {
             {errors.password && <span className="form-error">{errors.password}</span>}
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            className="auth-submit-btn"
-            disabled={isLoading}
-          >
+          <button type="submit" className="auth-submit-btn" disabled={isLoading}>
             {isLoading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
 
-        {/* Footer link */}
         <p className="auth-footer">
           Don&apos;t have an account?{' '}
           <button className="auth-link" onClick={() => navigate('register')}>

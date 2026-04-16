@@ -2,61 +2,46 @@
  * RegisterPage.jsx
  * -----------------------------------------------
  * Multi-field registration form with role selection.
- * Demonstrates: controlled form with multiple fields,
- * complex validation, useState, conditional rendering,
- * interactive role picker component.
+ *
+ * Sprint 3 changes:
+ *   - register() is now async (real API call).
+ *   - API error messages are extracted from error.response.data.error.
  */
 
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNav }  from '../context/AppContext';
-import AlertMessage from '../components/AlertMessage';
+import { useState }  from 'react';
+import { useAuth }   from '../context/AuthContext';
+import { useNav }    from '../context/AppContext';
+import AlertMessage  from '../components/AlertMessage';
 import './AuthPage.css';
 
 const ROLES = [
-  {
-    value: 'Homeowner',
-    icon:  '🏠',
-    name:  'Homeowner',
-    desc:  'Post renovation projects and hire contractors',
-  },
-  {
-    value: 'Contractor',
-    icon:  '🔨',
-    name:  'Contractor',
-    desc:  'Browse projects and submit competitive proposals',
-  },
+  { value: 'Homeowner',  icon: '🏠', name: 'Homeowner',  desc: 'Post renovation projects and hire contractors' },
+  { value: 'Contractor', icon: '🔨', name: 'Contractor', desc: 'Browse projects and submit competitive proposals' },
 ];
 
-// Password strength meter helper
 function getPasswordStrength(password) {
   if (!password) return { score: 0, label: '', color: '' };
   let score = 0;
-  if (password.length >= 8)             score++;
-  if (/[A-Z]/.test(password))           score++;
-  if (/[0-9]/.test(password))           score++;
-  if (/[^A-Za-z0-9]/.test(password))    score++;
-
+  if (password.length >= 8)            score++;
+  if (/[A-Z]/.test(password))          score++;
+  if (/[0-9]/.test(password))          score++;
+  if (/[^A-Za-z0-9]/.test(password))   score++;
   const levels = [
-    { label: '',        color: '' },
-    { label: 'Weak',    color: '#ef4444' },
-    { label: 'Fair',    color: '#eab308' },
-    { label: 'Good',    color: '#3b82f6' },
-    { label: 'Strong',  color: '#22c55e' },
+    { label: '',       color: '' },
+    { label: 'Weak',   color: '#ef4444' },
+    { label: 'Fair',   color: '#eab308' },
+    { label: 'Good',   color: '#3b82f6' },
+    { label: 'Strong', color: '#22c55e' },
   ];
   return levels[score];
 }
 
 export default function RegisterPage() {
-  const { register }  = useAuth();
-  const { navigate }  = useNav();
+  const { register } = useAuth();
+  const { navigate } = useNav();
 
   const [formData, setFormData] = useState({
-    name:            '',
-    email:           '',
-    password:        '',
-    confirmPassword: '',
-    role:            'Homeowner',
+    name: '', email: '', password: '', confirmPassword: '', role: 'Homeowner',
   });
   const [errors,    setErrors]    = useState({});
   const [apiError,  setApiError]  = useState('');
@@ -66,41 +51,29 @@ export default function RegisterPage() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   }
 
   function handleRoleSelect(role) {
-    setFormData((prev) => ({ ...prev, role }));
-    if (errors.role) setErrors((prev) => ({ ...prev, role: '' }));
+    setFormData(prev => ({ ...prev, role }));
+    if (errors.role) setErrors(prev => ({ ...prev, role: '' }));
   }
 
   function validate() {
     const e = {};
-    if (!formData.name.trim()) {
-      e.name = 'Full name is required.';
-    } else if (formData.name.trim().length < 2) {
-      e.name = 'Name must be at least 2 characters.';
-    }
-    if (!formData.email.trim()) {
-      e.email = 'Email is required.';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      e.email = 'Please enter a valid email address.';
-    }
-    if (!formData.password) {
-      e.password = 'Password is required.';
-    } else if (formData.password.length < 6) {
-      e.password = 'Password must be at least 6 characters.';
-    }
-    if (!formData.confirmPassword) {
-      e.confirmPassword = 'Please confirm your password.';
-    } else if (formData.password !== formData.confirmPassword) {
-      e.confirmPassword = 'Passwords do not match.';
-    }
+    if (!formData.name.trim())           e.name = 'Full name is required.';
+    else if (formData.name.trim().length < 2) e.name = 'Name must be at least 2 characters.';
+    if (!formData.email.trim())          e.email = 'Email is required.';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = 'Please enter a valid email address.';
+    if (!formData.password)              e.password = 'Password is required.';
+    else if (formData.password.length < 6) e.password = 'Password must be at least 6 characters.';
+    if (!formData.confirmPassword)       e.confirmPassword = 'Please confirm your password.';
+    else if (formData.password !== formData.confirmPassword) e.confirmPassword = 'Passwords do not match.';
     return e;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setApiError('');
 
@@ -112,10 +85,10 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      register(formData.name.trim(), formData.email.trim(), formData.password, formData.role);
+      await register(formData.name.trim(), formData.email.trim(), formData.password, formData.role);
       navigate('dashboard');
     } catch (err) {
-      setApiError(err.message);
+      setApiError(err.response?.data?.error || err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +97,6 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-card" style={{ maxWidth: 480 }}>
-        {/* Header */}
         <div className="auth-header">
           <div className="auth-logo">⬡</div>
           <h1 className="auth-title">Create your account</h1>
@@ -136,11 +108,11 @@ export default function RegisterPage() {
         )}
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          {/* Role selector — interactive component driven by state */}
+          {/* Role selector */}
           <div className="form-group">
             <label className="form-label">I am a…</label>
             <div className="role-selector">
-              {ROLES.map((r) => (
+              {ROLES.map(r => (
                 <button
                   key={r.value}
                   type="button"
@@ -159,15 +131,10 @@ export default function RegisterPage() {
           <div className={`form-group ${errors.name ? 'form-group--error' : ''}`}>
             <label className="form-label" htmlFor="name">Full Name</label>
             <input
-              id="name"
-              name="name"
-              type="text"
-              className="form-input"
-              placeholder="Jane Smith"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="name"
+              id="name" name="name" type="text"
+              className="form-input" placeholder="Jane Smith"
+              value={formData.name} onChange={handleChange}
+              disabled={isLoading} autoComplete="name"
             />
             {errors.name && <span className="form-error">{errors.name}</span>}
           </div>
@@ -176,15 +143,10 @@ export default function RegisterPage() {
           <div className={`form-group ${errors.email ? 'form-group--error' : ''}`}>
             <label className="form-label" htmlFor="reg-email">Email Address</label>
             <input
-              id="reg-email"
-              name="email"
-              type="email"
-              className="form-input"
-              placeholder="jane@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="email"
+              id="reg-email" name="email" type="email"
+              className="form-input" placeholder="jane@example.com"
+              value={formData.email} onChange={handleChange}
+              disabled={isLoading} autoComplete="email"
             />
             {errors.email && <span className="form-error">{errors.email}</span>}
           </div>
@@ -193,29 +155,22 @@ export default function RegisterPage() {
           <div className={`form-group ${errors.password ? 'form-group--error' : ''}`}>
             <label className="form-label" htmlFor="reg-password">Password</label>
             <input
-              id="reg-password"
-              name="password"
-              type="password"
-              className="form-input"
-              placeholder="Min. 6 characters"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="new-password"
+              id="reg-password" name="password" type="password"
+              className="form-input" placeholder="Min. 6 characters"
+              value={formData.password} onChange={handleChange}
+              disabled={isLoading} autoComplete="new-password"
             />
-            {/* Password strength bar */}
             {formData.password && (
               <div className="pw-strength">
                 <div className="pw-strength-bar">
-                  {[1, 2, 3, 4].map((i) => (
+                  {[1, 2, 3, 4].map(i => (
                     <div
                       key={i}
                       className="pw-strength-segment"
                       style={{
-                        background:
-                          i <= ['', 'Weak', 'Fair', 'Good', 'Strong'].indexOf(pwStrength.label)
-                            ? pwStrength.color
-                            : 'var(--clr-border)',
+                        background: i <= ['', 'Weak', 'Fair', 'Good', 'Strong'].indexOf(pwStrength.label)
+                          ? pwStrength.color
+                          : 'var(--clr-border)',
                       }}
                     />
                   ))}
@@ -234,15 +189,10 @@ export default function RegisterPage() {
           <div className={`form-group ${errors.confirmPassword ? 'form-group--error' : ''}`}>
             <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
             <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              className="form-input"
-              placeholder="Repeat your password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="new-password"
+              id="confirmPassword" name="confirmPassword" type="password"
+              className="form-input" placeholder="Repeat your password"
+              value={formData.confirmPassword} onChange={handleChange}
+              disabled={isLoading} autoComplete="new-password"
             />
             {errors.confirmPassword && (
               <span className="form-error">{errors.confirmPassword}</span>
@@ -263,9 +213,7 @@ export default function RegisterPage() {
 
         <p className="auth-footer">
           Already have an account?{' '}
-          <button className="auth-link" onClick={() => navigate('login')}>
-            Sign in
-          </button>
+          <button className="auth-link" onClick={() => navigate('login')}>Sign in</button>
         </p>
       </div>
     </div>
