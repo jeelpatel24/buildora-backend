@@ -89,15 +89,42 @@ app.use((err, req, res, next) => {
 });
 
 // =============================================================================
+// AUTO-SEED DEMO USERS
+// Runs once on startup — inserts demo accounts if they don't already exist.
+// Safe to run repeatedly because of ON CONFLICT DO NOTHING.
+// =============================================================================
+async function seedDemoUsers() {
+  const bcrypt = require('bcrypt');
+  try {
+    const demoPassword  = await bcrypt.hash('demo123',  10);
+    const adminPassword = await bcrypt.hash('admin123', 10);
+
+    await pool.query(`
+      INSERT INTO users (name, email, password_hash, role, is_verified) VALUES
+        ('Admin User',    'admin@buildora.com',  $1, 'Admin',      TRUE),
+        ('Alex Homeowner','homeowner@demo.com',  $2, 'Homeowner',  TRUE),
+        ('Sam Contractor','contractor@demo.com', $2, 'Contractor', TRUE)
+      ON CONFLICT (email) DO NOTHING
+    `, [adminPassword, demoPassword]);
+
+    console.log('✓ Demo users ready (admin / homeowner / contractor)');
+  } catch (err) {
+    // Non-fatal — table may not exist yet on a brand new database
+    console.warn('⚠ Could not seed demo users:', err.message);
+  }
+}
+
+// =============================================================================
 // START SERVER
 // =============================================================================
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log('=================================');
   console.log('  Buildora Backend Server');
   console.log('=================================');
   console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`  Port:        ${PORT}`);
   console.log('=================================');
+  await seedDemoUsers();
 });
 
 // =============================================================================
