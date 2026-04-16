@@ -299,16 +299,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Tech Trust Strip ── */}
-      <section className="trust-section container">
-        <div className="trust-section-header">
-          <span className="section-eyebrow">Built With</span>
-          <h3 className="trust-section-title">Production-grade technology stack</h3>
-        </div>
-        <div className="trust-badges">
-          {TRUST_BADGES.map((b) => (
-            <TrustBadge key={b.value} {...b} />
-          ))}
+      {/* ── Tech Strip ── */}
+      <section className="tech-strip">
+        <div className="container">
+          <p className="tech-strip-label">Powered by</p>
+          <div className="tech-strip-items">
+            {TRUST_BADGES.map((b) => (
+              <div key={b.value} className="tech-strip-item">
+                <span className="tech-strip-icon">{b.icon}</span>
+                <span className="tech-strip-name">{b.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

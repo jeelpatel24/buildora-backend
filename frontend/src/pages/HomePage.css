@@ -518,61 +518,62 @@
   transform: translateY(-1px);
 }
 
-/* ── Tech Trust Strip ── */
-.trust-section {
-  padding: 72px 0;
+/* ── Tech Strip ── */
+.tech-strip {
+  padding: 40px 0;
   border-top: 1px solid var(--clr-border);
+  border-bottom: 1px solid var(--clr-border);
+  background: var(--clr-surface);
 }
 
-.trust-section-header {
+.tech-strip-label {
   text-align: center;
-  margin-bottom: 40px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--clr-text-dim);
+  margin-bottom: 20px;
 }
 
-.trust-section-title {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--clr-text);
-  letter-spacing: -0.02em;
-  margin-top: 8px;
-}
-
-.trust-badges {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
-}
-
-.trust-badge {
+.tech-strip-items {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--clr-surface);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius-xl);
-  padding: 16px 18px;
-  transition: border-color 0.15s, transform 0.15s;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
 }
 
-.trust-badge:hover {
-  border-color: var(--clr-border-light);
-  transform: translateY(-2px);
+.tech-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 28px;
+  position: relative;
+  transition: opacity 0.15s;
 }
 
-.trust-badge-icon { font-size: 1.5rem; }
+.tech-strip-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
+  width: 1px;
+  background: var(--clr-border);
+}
 
-.trust-badge-value {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--clr-text);
+.tech-strip-item:hover { opacity: 0.75; }
+
+.tech-strip-icon { font-size: 1.2rem; }
+
+.tech-strip-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  white-space: nowrap;
   letter-spacing: -0.01em;
-}
-
-.trust-badge-label {
-  font-size: 0.74rem;
-  color: var(--clr-text-dim);
-  margin-top: 2px;
 }
 
 /* ── CTA Banner ── */
@@ -671,11 +672,11 @@
   .hero-stat-value { font-size: 1.4rem; }
   .cta-inner     { padding: 48px 24px; }
   .features-grid { grid-template-columns: 1fr; }
-  .trust-badges  { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .tech-strip-item { padding: 10px 18px; }
 }
 
 @media (max-width: 480px) {
   .hero-stats      { flex-direction: column; gap: 16px; }
   .hero-stat::after { display: none; }
-  .trust-badges    { grid-template-columns: 1fr 1fr; }
+  .tech-strip-item  { padding: 8px 14px; }
 }
