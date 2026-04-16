@@ -315,7 +315,8 @@ export default function CreateProjectPage() {
                   <li
                     key={s.id}
                     className="loc-suggestion-item"
-                    onMouseDown={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // prevent input blur before pick runs
                       loc.pick(s.label);
                       setErrors(prev => ({ ...prev, location: '' }));
                     }}
