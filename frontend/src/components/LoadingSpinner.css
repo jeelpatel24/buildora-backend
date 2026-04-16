@@ -1,25 +1,27 @@
+/* ── Loading Spinner ── */
 .spinner-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  gap: 16px;
+  padding: 72px 48px;
+  gap: 20px;
+  min-height: 240px;
 }
 
 .spinner-ring {
   display: inline-block;
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
 }
 
 .spinner-ring div {
   box-sizing: border-box;
   display: block;
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   margin: 6px;
   border: 3px solid transparent;
   border-top-color: var(--clr-orange);
@@ -28,8 +30,8 @@
 }
 
 .spinner-ring div:nth-child(1) { animation-delay: -0.45s; }
-.spinner-ring div:nth-child(2) { animation-delay: -0.3s;  border-top-color: var(--clr-blue); }
-.spinner-ring div:nth-child(3) { animation-delay: -0.15s; border-top-color: var(--clr-orange-dim); }
+.spinner-ring div:nth-child(2) { animation-delay: -0.3s;  border-top-color: rgba(249,115,22,0.4); }
+.spinner-ring div:nth-child(3) { animation-delay: -0.15s; border-top-color: rgba(249,115,22,0.2); }
 
 @keyframes spinner-rotate {
   0%   { transform: rotate(0deg); }
@@ -37,6 +39,7 @@
 }
 
 .spinner-message {
-  color: var(--clr-text-muted);
-  font-size: 0.875rem;
+  color: var(--clr-text-dim);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
 }

@@ -1,66 +1,74 @@
-.page-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
+/* ── My Projects Page ── */
 .create-btn {
-  background: var(--clr-orange);
+  background: linear-gradient(135deg, #f97316, #ea6d09);
   border: none;
   color: #fff;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
-  transition: background 0.15s;
+  transition: all 0.15s;
+  box-shadow: 0 3px 12px rgba(249,115,22,0.25);
+  letter-spacing: 0.01em;
 }
 
-.create-btn:hover { background: var(--clr-orange-dim); }
+.create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(249,115,22,0.35);
+}
 
 /* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 300;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  animation: overlay-in 0.15s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .modal-box {
   background: var(--clr-surface);
   border: 1px solid var(--clr-border-light);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  animation: modal-in 0.18s ease;
 }
 
-.modal-box--sm {
-  max-width: 400px;
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+.modal-box--sm { max-width: 400px; }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 24px 0;
+  padding: 24px 28px 0;
 }
 
 .modal-title {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--clr-text);
+  letter-spacing: -0.02em;
 }
 
 .modal-close {
@@ -71,41 +79,62 @@
   line-height: 1;
   padding: 0 4px;
   transition: color 0.15s;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
 }
 
-.modal-close:hover { color: var(--clr-text); }
+.modal-close:hover {
+  color: var(--clr-text);
+  background: rgba(255,255,255,0.05);
+}
 
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 24px 0;
+  gap: 18px;
+  padding: 22px 28px 0;
 }
 
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 0.83rem; font-weight: 500; color: var(--clr-text-muted); }
-.form-error { font-size: 0.78rem; color: var(--clr-red); }
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  letter-spacing: -0.01em;
+}
+
+.form-error { font-size: 0.77rem; color: #f87171; font-weight: 500; }
 
 .form-input {
   background: var(--clr-surface-2);
   border: 1px solid var(--clr-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--clr-text);
-  padding: 9px 12px;
+  padding: 10px 13px;
   font-size: 0.875rem;
   width: 100%;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.form-input:focus { border-color: var(--clr-orange); }
-.form-group--error .form-input { border-color: var(--clr-red); }
-textarea.form-input { resize: vertical; }
+
+.form-input:focus {
+  border-color: rgba(249,115,22,0.4);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.08);
+}
+
+.form-group--error .form-input { border-color: rgba(239,68,68,0.5); }
+textarea.form-input { resize: vertical; line-height: 1.6; }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 20px 24px;
+  padding: 20px 28px;
   border-top: 1px solid var(--clr-border);
   margin-top: 8px;
 }
@@ -114,40 +143,53 @@ textarea.form-input { resize: vertical; }
   background: none;
   border: 1px solid var(--clr-border);
   color: var(--clr-text-muted);
-  padding: 9px 18px;
-  border-radius: var(--radius-sm);
+  padding: 9px 20px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.15s;
 }
-.modal-btn-cancel:hover { border-color: var(--clr-text-muted); color: var(--clr-text); }
+
+.modal-btn-cancel:hover {
+  border-color: var(--clr-border-light);
+  color: var(--clr-text);
+}
 
 .modal-btn-save {
-  background: var(--clr-orange);
+  background: linear-gradient(135deg, #f97316, #ea6d09);
   border: none;
   color: #fff;
-  padding: 9px 20px;
-  border-radius: var(--radius-sm);
+  padding: 9px 22px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
-  font-weight: 600;
-  transition: background 0.15s;
+  font-weight: 700;
+  transition: all 0.15s;
+  box-shadow: 0 2px 10px rgba(249,115,22,0.2);
 }
-.modal-btn-save:hover { background: var(--clr-orange-dim); }
+
+.modal-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(249,115,22,0.3);
+}
 
 .modal-btn-delete {
-  background: var(--clr-red);
-  border: none;
-  color: #fff;
-  padding: 9px 20px;
-  border-radius: var(--radius-sm);
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #f87171;
+  padding: 9px 22px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
-  font-weight: 600;
-  transition: opacity 0.15s;
+  font-weight: 700;
+  transition: all 0.15s;
 }
-.modal-btn-delete:hover { opacity: 0.85; }
+
+.modal-btn-delete:hover:not(:disabled) {
+  background: rgba(239,68,68,0.18);
+}
 
 .delete-warning {
   font-size: 0.875rem;
   color: var(--clr-text-muted);
-  padding: 16px 24px 0;
-  line-height: 1.6;
+  padding: 16px 28px 0;
+  line-height: 1.65;
 }

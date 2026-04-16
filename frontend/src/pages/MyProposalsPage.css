@@ -1,11 +1,12 @@
+/* ── My Proposals Page ── */
 .proposals-tabs {
   display: flex;
   gap: 4px;
   background: var(--clr-surface);
   border: 1px solid var(--clr-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: 4px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   width: fit-content;
 }
 
@@ -16,9 +17,10 @@
   background: none;
   border: none;
   color: var(--clr-text-muted);
-  padding: 7px 16px;
-  border-radius: var(--radius-sm);
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.15s;
 }
 
@@ -28,22 +30,24 @@
 }
 
 .proposals-tab--active {
-  background: var(--clr-surface-3);
-  color: var(--clr-orange);
-  border: 1px solid var(--clr-border);
+  background: rgba(249,115,22,0.08);
+  border: 1px solid rgba(249,115,22,0.25);
+  color: var(--clr-orange-light);
+  font-weight: 700;
 }
 
 .tab-count {
-  background: var(--clr-surface-3);
+  background: var(--clr-surface-2);
   color: var(--clr-text-dim);
   border-radius: 999px;
-  padding: 1px 7px;
+  padding: 1px 8px;
   font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .proposals-tab--active .tab-count {
-  background: var(--clr-orange-glow);
-  color: var(--clr-orange);
+  background: rgba(249,115,22,0.15);
+  color: var(--clr-orange-light);
 }
 
 .proposals-list {
@@ -53,55 +57,72 @@
 }
 
 .browse-btn {
-  background: var(--clr-orange);
+  background: linear-gradient(135deg, #f97316, #ea6d09);
   border: none;
   color: #fff;
-  padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 16px;
-  transition: background 0.15s;
+  transition: all 0.15s;
+  box-shadow: 0 3px 12px rgba(249,115,22,0.25);
 }
 
-.browse-btn:hover { background: var(--clr-orange-dim); }
+.browse-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(249,115,22,0.35);
+}
 
 /* Confirm dialog */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 300;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  animation: overlay-in 0.15s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .confirm-box {
   background: var(--clr-surface);
   border: 1px solid var(--clr-border-light);
-  border-radius: var(--radius-xl);
-  padding: 28px;
+  border-radius: var(--radius-2xl);
+  padding: 32px;
   max-width: 420px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  animation: modal-in 0.18s ease;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .confirm-title {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--clr-text);
   margin-bottom: 10px;
+  letter-spacing: -0.02em;
 }
 
 .confirm-body {
   font-size: 0.875rem;
   color: var(--clr-text-muted);
-  line-height: 1.6;
-  margin-bottom: 24px;
+  line-height: 1.65;
+  margin-bottom: 28px;
 }
 
 .confirm-actions {
@@ -114,26 +135,27 @@
   background: none;
   border: 1px solid var(--clr-border);
   color: var(--clr-text-muted);
-  padding: 9px 18px;
-  border-radius: var(--radius-sm);
+  padding: 9px 20px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.15s;
 }
 
 .confirm-btn-cancel:hover {
-  border-color: var(--clr-text-muted);
+  border-color: var(--clr-border-light);
   color: var(--clr-text);
 }
 
 .confirm-btn-confirm {
-  background: var(--clr-red);
-  border: none;
-  color: #fff;
-  padding: 9px 18px;
-  border-radius: var(--radius-sm);
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #f87171;
+  padding: 9px 20px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
-  font-weight: 600;
-  transition: opacity 0.15s;
+  font-weight: 700;
+  transition: all 0.15s;
 }
 
-.confirm-btn-confirm:hover { opacity: 0.85; }
+.confirm-btn-confirm:hover { background: rgba(239,68,68,0.18); }
