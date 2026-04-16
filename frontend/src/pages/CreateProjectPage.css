@@ -260,6 +260,134 @@ textarea.form-input { resize: vertical; min-height: 120px; line-height: 1.65; }
   color: var(--clr-text);
 }
 
+/* ── Location autocomplete ── */
+.loc-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loc-pin-icon {
+  position: absolute;
+  left: 13px;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.loc-input {
+  padding-left: 36px !important;
+  padding-right: 40px !important;
+}
+
+.loc-verified-badge {
+  position: absolute;
+  right: 13px;
+  color: #4ade80;
+  font-size: 0.85rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.loc-spinner {
+  position: absolute;
+  right: 13px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--clr-border);
+  border-top-color: var(--clr-orange);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loc-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  z-index: 200;
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+  overflow: hidden;
+  animation: dropdown-in 0.12s ease;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.loc-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.loc-suggestion-item:hover {
+  background: var(--clr-surface-2);
+}
+
+.loc-suggestion-icon {
+  font-size: 0.9rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.loc-suggestion-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--clr-text);
+  letter-spacing: -0.01em;
+}
+
+.loc-suggestion-full {
+  font-size: 0.75rem;
+  color: var(--clr-text-dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+
+.loc-suggestions-footer {
+  font-size: 0.7rem;
+  color: var(--clr-text-dim);
+  text-align: right;
+  padding: 6px 12px 4px;
+  border-top: 1px solid var(--clr-border);
+  margin-top: 2px;
+}
+
+.loc-input-wrap ~ .loc-suggestions {
+  position: absolute;
+}
+
+.preview-verified {
+  color: #4ade80;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Anchor suggestions to the location form-group */
+.form-group:has(.loc-input-wrap) {
+  position: relative;
+}
+
 @media (max-width: 900px) {
   .create-layout  { grid-template-columns: 1fr; }
   .create-preview { position: static; display: none; }
