@@ -1,0 +1,31 @@
+# render.yaml — Render Infrastructure as Code
+# Deploys the full-stack Buildora app as a single Node.js web service.
+# The Express backend builds the React frontend and then serves it statically,
+# so only ONE Render service and URL is needed.
+#
+# Setup steps:
+#   1. Push this repo to GitHub.
+#   2. Create a Render account at https://render.com
+#   3. Click "New +" → "Web Service" → connect your GitHub repo.
+#   4. Render will detect this file and auto-fill the settings below.
+#   5. Add environment variables in the Render dashboard:
+#        DATABASE_URL  — your PostgreSQL connection string
+#        JWT_SECRET    — any long random string (e.g. from https://randomkeygen.com)
+#        NODE_ENV      — production
+
+services:
+  - type: web
+    name: buildora
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false          # set this manually in the Render dashboard
+      - key: JWT_SECRET
+        sync: false          # set this manually in the Render dashboard

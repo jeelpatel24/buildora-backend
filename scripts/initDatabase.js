@@ -21,24 +21,10 @@ if (!connectionString) {
 }
 
 // Parse the connection string the same way config/database.js does
-let poolConfig = {};
-try {
-  const url = new URL(connectionString);
-  poolConfig = {
-    host:     url.hostname,
-    port:     parseInt(url.port) || 5432,
-    database: url.pathname.slice(1), // remove leading '/'
-    user:     url.username,
-    password: url.password,
-    ssl:      { rejectUnauthorized: false } // required for Railway/cloud hosts
-  };
-} catch (e) {
-  // Fall back to raw connection string if URL parsing fails
-  poolConfig = {
-    connectionString,
-    ssl: { rejectUnauthorized: false }
-  };
-}
+const poolConfig = {
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+};
 
 const pool = new Pool(poolConfig);
 

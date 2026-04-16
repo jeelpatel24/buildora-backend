@@ -90,7 +90,10 @@ router.post(
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT p.*, u.name AS homeowner_name, u.email AS homeowner_email
+      `SELECT p.*,
+              u.name  AS homeowner_name,
+              u.email AS homeowner_email,
+              (SELECT COUNT(*) FROM proposals WHERE project_id = p.project_id) AS proposal_count
        FROM projects p
        JOIN users u ON p.homeowner_id = u.user_id
        WHERE p.status = 'Open'

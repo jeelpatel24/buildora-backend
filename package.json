@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "init-db": "node scripts/initDatabase.js"
+    "init-db": "node scripts/initDatabase.js",
+    "build": "cd frontend && npm install && npm run build"
   },
   "keywords": ["renovation", "contractors", "homeowners", "marketplace"],
   "author": "Jeel Patel",

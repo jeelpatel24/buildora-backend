@@ -12,23 +12,10 @@ if (!connectionString) {
 let poolConfig = {};
 
 if (connectionString) {
-  try {
-    const url = new URL(connectionString);
-    poolConfig = {
-      host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.slice(1), // Remove leading '/'
-      user: url.username,
-      password: url.password,
-      ssl: { rejectUnauthorized: false } // Railway requires SSL
-    };
-  } catch (e) {
-    // If URL parsing fails, fall back to connectionString
-    poolConfig = {
-      connectionString,
-      ssl: { rejectUnauthorized: false }
-    };
-  }
+  poolConfig = {
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  };
 }
 
 // Create PostgreSQL connection pool
