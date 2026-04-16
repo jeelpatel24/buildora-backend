@@ -150,7 +150,7 @@ const CONTRACTOR_STEPS = [
     icon: '💼',
     title: 'Submit a proposal',
     description: 'Set your quoted price and write a compelling cover message.',
-    detail: 'Explain your approach, relevant experience, and why you're the best fit. Stand out from the competition with a personalized pitch.',
+    detail: "Explain your approach, relevant experience, and why you're the best fit. Stand out from the competition with a personalized pitch.",
     accent: 'green',
   },
   {
@@ -158,7 +158,7 @@ const CONTRACTOR_STEPS = [
     icon: '🏆',
     title: 'Win the project',
     description: 'If the homeowner accepts your bid, the job is yours.',
-    detail: 'Track all your active and past proposals in "My Proposals". Withdraw bids you're no longer interested in at any time.',
+    detail: "Track all your active and past proposals in \"My Proposals\". Withdraw bids you're no longer interested in at any time.",
     accent: 'purple',
   },
 ];
