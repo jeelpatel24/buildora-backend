@@ -34,6 +34,7 @@ import ProjectDetailPage  from './pages/ProjectDetailPage';
 import MyProjectsPage     from './pages/MyProjectsPage';
 import MyProposalsPage    from './pages/MyProposalsPage';
 import AdminPage          from './pages/AdminPage';
+import NotFoundPage       from './pages/NotFoundPage';
 
 import './App.css';
 
@@ -97,8 +98,8 @@ function AppRoutes() {
         element={<ProtectedRoute roles={['Admin']}><AdminPage /></ProtectedRoute>}
       />
 
-      {/* Catch-all: redirect unknown URLs to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-all: show a proper 404 page for unknown URLs */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

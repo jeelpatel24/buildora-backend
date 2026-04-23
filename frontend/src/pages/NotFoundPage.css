@@ -1,0 +1,78 @@
+/* ============================================================
+   NotFoundPage.css
+   Styles for the custom 404 error page
+   ============================================================ */
+
+/* Full-height centered layout so the card sits in the middle of the screen */
+.notfound-page {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* Card container — matches the surface style used across the app */
+.notfound-card {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+}
+
+/* The giant "404" number — orange brand color to make it pop */
+.notfound-code {
+  font-size: 6rem;
+  font-weight: 800;
+  color: var(--clr-orange);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -2px;
+}
+
+/* Emoji icon sitting below the number */
+.notfound-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Main heading */
+.notfound-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--clr-text, #e2e8f0);
+  margin-bottom: 0.75rem;
+}
+
+/* Explanation text */
+.notfound-message {
+  font-size: 0.95rem;
+  color: var(--clr-text-dim, #94a3b8);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Primary action button — same orange style as the rest of the app */
+.notfound-btn {
+  background: var(--clr-orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.notfound-btn:hover {
+  background: var(--clr-orange-dim);
+  transform: translateY(-1px);
+}
+
+.notfound-btn:active {
+  transform: translateY(0);
+}
